@@ -129,7 +129,7 @@ class ApiService {
       body: jsonEncode({
         'receiver_id': message.receiverId,
         'content': message.content,
-        'type': message.type.name, // Assuming MessageType is an enum
+        'type': message.type.name,
       }),
     );
 

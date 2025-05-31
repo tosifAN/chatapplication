@@ -118,7 +118,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Send message via MQTT
     try {
       await _mqttService.sendMessage(message);
-     // await _apiService.sendDirectMessage(message);
+      await _apiService.sendDirectMessage(message);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending message: $e')),
