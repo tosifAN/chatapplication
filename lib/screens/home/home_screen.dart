@@ -1,3 +1,4 @@
+import 'package:chatapplication/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -193,25 +194,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
 class ChatsTab extends StatelessWidget {
   final String userId;
-  
-  const ChatsTab({super.key, required this.userId});
+
+  ChatsTab({super.key, required this.userId});
+
+  final ApiService _apiService = ApiService();
 
   @override
   Widget build(BuildContext context) {
     // This will be replaced with actual data from a chat provider
     return FutureBuilder<List<User>>(
-      future: Future.value([]), // Replace with actual API call
+      // Correctly pass the Future returned by the API call
+      future: _apiService.getRecentChats(userId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
-        
+
+        // snapshot.data is now directly List<User>
         final users = snapshot.data ?? [];
-        
+
         if (users.isEmpty) {
           return const Center(
             child: Text(
@@ -220,7 +225,7 @@ class ChatsTab extends StatelessWidget {
             ),
           );
         }
-        
+
         return ListView.builder(
           itemCount: users.length,
           itemBuilder: (context, index) {

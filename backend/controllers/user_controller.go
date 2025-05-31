@@ -188,3 +188,72 @@ func (uc *UserController) GetUserGroups(c *gin.Context) {
 
 	c.JSON(http.StatusOK, groups)
 }
+
+// GetRecentChats returns a list of users who have recently chatted with the main user
+func (uc *UserController) GetRecentChats(c *gin.Context) {
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
+		return
+	}
+
+	// Get the authenticated user ID from the context
+	authUserID, exists := c.Get("user_id")
+	if !exists || authUserID != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Use a subquery to get recent chat user IDs ordered by latest message timestamp
+	type ChatUser struct {
+		UserID    string
+		LastMsgAt time.Time
+	}
+	var chatUsers []ChatUser
+
+	uc.db.Raw(`
+		SELECT
+			CASE
+				WHEN sender_id = ? THEN receiver_id
+				WHEN receiver_id = ? THEN sender_id
+			END AS user_id,
+			MAX(timestamp) AS last_msg_at
+		FROM messages
+		WHERE (sender_id = ? OR receiver_id = ?)
+			AND receiver_id IS NOT NULL
+		GROUP BY user_id
+		ORDER BY last_msg_at DESC
+	`, userID, userID, userID, userID).Scan(&chatUsers)
+
+	if len(chatUsers) == 0 {
+		c.JSON(http.StatusOK, []interface{}{})
+		return
+	}
+
+	// Extract user IDs in order
+	recentUserIDs := make([]string, len(chatUsers))
+	for i, cu := range chatUsers {
+		recentUserIDs[i] = cu.UserID
+	}
+
+	// Get user details for these IDs
+	var users []models.User
+	if err := uc.db.Where("id IN ?", recentUserIDs).Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		return
+	}
+
+	// Optional: sort users in the same order as recentUserIDs
+	userMap := make(map[string]models.User)
+	for _, u := range users {
+		userMap[u.ID] = u
+	}
+	orderedUsers := make([]models.User, 0, len(recentUserIDs))
+	for _, id := range recentUserIDs {
+		if u, ok := userMap[id]; ok {
+			orderedUsers = append(orderedUsers, u)
+		}
+	}
+
+	c.JSON(http.StatusOK, orderedUsers)
+}

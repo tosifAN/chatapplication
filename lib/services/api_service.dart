@@ -139,6 +139,21 @@ class ApiService {
       throw Exception('Failed to send direct message: ${response.body}');
     }
   }
+
+   Future<List<User>> getRecentChats(String userid) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/$userid/recent-chats'),
+      headers: _headers,
+    );
+    
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body);
+      print("this is the recent chat user data $data");
+      return data.map((json) => User.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to get recent interacted users: ${response.body}');
+    }
+  }
   
   Future<List<Message>> getGroupMessages(String groupId, {int limit = 50, int offset = 0}) async {
     final response = await http.get(

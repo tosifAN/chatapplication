@@ -78,6 +78,7 @@ func main() {
 			users.GET("/:id", userController.GetUser)
 			users.PUT("/:id", userController.UpdateUser)
 			users.GET("/:id/groups", userController.GetUserGroups)
+			users.GET("/:id/recent-chats", userController.GetRecentChats) // <-- Add this line
 		}
 
 		// Message routes
