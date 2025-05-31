@@ -121,6 +121,24 @@ class ApiService {
       throw Exception('Failed to get direct messages: ${response.body}');
     }
   }
+  // Message operations
+  Future<Message> sendDirectMessage(Message message) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/messages/direct'),
+      headers: _headers,
+      body: jsonEncode({
+        'receiver_id': message.receiverId,
+        'content': message.content,
+        'type': message.type.name, // Assuming MessageType is an enum
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return Message.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to send direct message: ${response.body}');
+    }
+  }
   
   Future<List<Message>> getGroupMessages(String groupId, {int limit = 50, int offset = 0}) async {
     final response = await http.get(

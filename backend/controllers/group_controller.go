@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"time"
 
+	"backend/models"
+	"backend/mqtt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/chatapplication/backend/models"
-	"github.com/chatapplication/backend/mqtt"
 	"gorm.io/gorm"
 )
 

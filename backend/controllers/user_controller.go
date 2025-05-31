@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"time"
 
+	"backend/models"
+
 	"github.com/gin-gonic/gin"
-	"github.com/chatapplication/backend/models"
 	"gorm.io/gorm"
 )
 
@@ -153,7 +154,7 @@ func (uc *UserController) GetUserGroups(c *gin.Context) {
 	}
 
 	// Get the authenticated user ID from the context
-	authUserID, exists := c.Get("user_id")
+	_, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return

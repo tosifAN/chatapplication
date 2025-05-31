@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
@@ -99,7 +101,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-
     final message = Message(
       senderId: _currentUser.id,
       receiverId: widget.otherUser.id,
@@ -117,6 +118,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Send message via MQTT
     try {
       await _mqttService.sendMessage(message);
+     // await _apiService.sendDirectMessage(message);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending message: $e')),

@@ -3,18 +3,18 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
+
+	"backend/config"
+	"backend/controllers"
+	"backend/middleware"
+	"backend/models"
+	"backend/mqtt"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/chatapplication/backend/config"
-	"github.com/chatapplication/backend/controllers"
-	"github.com/chatapplication/backend/middleware"
-	"github.com/chatapplication/backend/models"
-	"github.com/chatapplication/backend/mqtt"
 )
 
 func main() {

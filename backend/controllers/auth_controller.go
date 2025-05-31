@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"time"
 
+	"backend/middleware"
+	"backend/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/chatapplication/backend/middleware"
-	"github.com/chatapplication/backend/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -93,12 +94,12 @@ func (ac *AuthController) Register(c *gin.Context) {
 	// Return user data and token
 	c.JSON(http.StatusCreated, gin.H{
 		"user": gin.H{
-			"id":        user.ID,
-			"username":  user.Username,
-			"email":     user.Email,
+			"id":         user.ID,
+			"username":   user.Username,
+			"email":      user.Email,
 			"avatar_url": user.AvatarURL,
-			"last_seen": user.LastSeen,
-			"is_online": user.IsOnline,
+			"last_seen":  user.LastSeen,
+			"is_online":  user.IsOnline,
 		},
 		"token": token,
 	})
@@ -144,12 +145,12 @@ func (ac *AuthController) Login(c *gin.Context) {
 	// Return user data and token
 	c.JSON(http.StatusOK, gin.H{
 		"user": gin.H{
-			"id":        user.ID,
-			"username":  user.Username,
-			"email":     user.Email,
+			"id":         user.ID,
+			"username":   user.Username,
+			"email":      user.Email,
 			"avatar_url": user.AvatarURL,
-			"last_seen": user.LastSeen,
-			"is_online": user.IsOnline,
+			"last_seen":  user.LastSeen,
+			"is_online":  user.IsOnline,
 		},
 		"token": token,
 	})

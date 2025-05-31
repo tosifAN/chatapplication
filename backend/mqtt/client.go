@@ -7,8 +7,9 @@ import (
 	"os"
 	"time"
 
+	"backend/models"
+
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/chatapplication/backend/models"
 )
 
 // MQTTClient handles MQTT communication

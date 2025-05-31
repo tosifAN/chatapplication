@@ -43,8 +43,8 @@ type Message struct {
 	UpdatedAt  time.Time   `json:"updated_at"`
 
 	// Relations
-	Sender   User  `json:"sender" gorm:"foreignKey:SenderID"`
-	Receiver *User `json:"receiver,omitempty" gorm:"foreignKey:ReceiverID"`
+	Sender   User   `json:"sender" gorm:"foreignKey:SenderID"`
+	Receiver *User  `json:"receiver,omitempty" gorm:"foreignKey:ReceiverID"`
 	Group    *Group `json:"group,omitempty" gorm:"foreignKey:GroupID"`
 }
 

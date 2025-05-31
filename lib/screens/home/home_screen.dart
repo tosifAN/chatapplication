@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+    print("arrived in home screen");
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       setState(() {

@@ -63,9 +63,10 @@ class AuthProvider with ChangeNotifier {
       
       _currentUser = User.fromJson(response['user']);
       _isAuthenticated = true;
-      
+      print("starting mqtt service");
       // Connect to MQTT broker
       await _mqttService.connect(_currentUser!.id);
+      print("sucessfully completed mqtt");
     } catch (e) {
       rethrow;
     } finally {

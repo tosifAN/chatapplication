@@ -42,6 +42,8 @@ class MQTTService {
     _client!.onDisconnected = _onDisconnected;
     _client!.onConnected = _onConnected;
     _client!.onSubscribed = _onSubscribed;
+
+    print("connection with mqtt starting....");
     
     final connMessage = MqttConnectMessage()
         .withClientIdentifier(_clientId!)
@@ -54,6 +56,7 @@ class MQTTService {
     
     try {
       await _client!.connect();
+      print("sucessfully connected!");
       return _isConnected = true;
     } catch (e) {
       if (kDebugMode) {
