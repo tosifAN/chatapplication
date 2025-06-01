@@ -1,5 +1,7 @@
 import 'dart:async';
-
+import 'package:chatapplication/screens/group/adduserdialogbox.dart';
+import 'package:chatapplication/screens/group/group_message_bubble.dart';
+import 'package:chatapplication/screens/group/infodialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/group.dart';
@@ -93,7 +95,6 @@ class _GroupScreenState extends State<GroupScreen> {
     try {
       // Fetch group details to get updated member list
       final group = await _apiService.getGroupDetails(widget.group.id);
-      
       // Fetch user details for each member
       final membersFutures = group.memberIds.map((userId) => _apiService.getUserProfile(userId));
       final members = await Future.wait(membersFutures);
@@ -146,126 +147,6 @@ class _GroupScreenState extends State<GroupScreen> {
         SnackBar(content: Text('Error sending message: $e')),
       );
     }
-  }
-
-  void _showGroupInfo() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 50,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: widget.group.avatarUrl != null
-                        ? NetworkImage(widget.group.avatarUrl!)
-                        : null,
-                    child: widget.group.avatarUrl == null
-                        ? Text(
-                            widget.group.name[0].toUpperCase(),
-                            style: const TextStyle(fontSize: 30),
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: Text(
-                    widget.group.name,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                if (widget.group.description != null) ...[  
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      widget.group.description!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                Text(
-                  'Members (${_members.length})',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _members.length,
-                  itemBuilder: (context, index) {
-                    final member = _members[index];
-                    final isCreator = member.id == widget.group.creatorId;
-                    final isCurrentUser = member.id == _currentUser.id;
-                    
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: member.avatarUrl != null
-                            ? NetworkImage(member.avatarUrl!)
-                            : null,
-                        child: member.avatarUrl == null
-                            ? Text(member.username[0].toUpperCase())
-                            : null,
-                      ),
-                      title: Row(
-                        children: [
-                          Text(member.username),
-                          if (isCurrentUser)
-                            const Text(' (You)', style: TextStyle(fontStyle: FontStyle.italic)),
-                        ],
-                      ),
-                      subtitle: isCreator
-                          ? const Text('Group Admin', style: TextStyle(color: Colors.blue))
-                          : null,
-                      trailing: isCreator || !isCurrentUser ? null : IconButton(
-                        icon: const Icon(Icons.exit_to_app),
-                        onPressed: () {
-                          // Leave group functionality
-                          Navigator.pop(context);
-                          _showLeaveGroupDialog();
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   void _showLeaveGroupDialog() {
@@ -333,8 +214,30 @@ class _GroupScreenState extends State<GroupScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person_add),
+            tooltip: 'Add User',
+            onPressed: () {
+              showAddUserDialog(
+                context: context,
+                group: widget.group,
+                members: _members,
+                currentUser: _currentUser,
+                apiService: _apiService,
+                refreshMembers: _loadGroupMembers,
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.info_outline),
-            onPressed: _showGroupInfo,
+            onPressed: () {
+              showGroupInfo(
+                context: context,
+                group: widget.group,
+                members: _members,
+                currentUser: _currentUser,
+                onLeaveGroup: _showLeaveGroupDialog,
+              );
+            },
           ),
         ],
       ),
@@ -415,107 +318,5 @@ class _GroupScreenState extends State<GroupScreen> {
         ],
       ),
     );
-  }
-}
-
-class GroupMessageBubble extends StatelessWidget {
-  final Message message;
-  final bool isMe;
-  final User sender;
-
-  const GroupMessageBubble({
-    super.key,
-    required this.message,
-    required this.isMe,
-    required this.sender,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isMe) ...[  
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: sender.avatarUrl != null
-                  ? NetworkImage(sender.avatarUrl!)
-                  : null,
-              child: sender.avatarUrl == null
-                  ? Text(sender.username[0].toUpperCase(), style: const TextStyle(fontSize: 12))
-                  : null,
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                if (!isMe)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4.0, bottom: 2.0),
-                    child: Text(
-                      sender.username,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
-                  ),
-                Container(
-                  constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.7,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                  decoration: BoxDecoration(
-                    color: isMe
-                        ? Theme.of(context).primaryColor.withOpacity(0.8)
-                        : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.content,
-                        style: TextStyle(
-                          color: isMe ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatTime(message.timestamp),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isMe ? Colors.white.withOpacity(0.7) : Colors.black54,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (isMe) const SizedBox(width: 24),
-        ],
-      ),
-    );
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
-
-    String timeStr = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    
-    if (messageDate == today) {
-      return timeStr;
-    } else if (messageDate == yesterday) {
-      return 'Yesterday, $timeStr';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}, $timeStr';
-    }
   }
 }

@@ -1,4 +1,37 @@
 import 'package:uuid/uuid.dart';
+import 'user.dart'; // Make sure this import exists
+
+class GroupMember {
+  final String groupId;
+  final String userId;
+  final DateTime joinedAt;
+  final bool isAdmin;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final User? user;
+
+  GroupMember({
+    required this.groupId,
+    required this.userId,
+    required this.joinedAt,
+    required this.isAdmin,
+    required this.createdAt,
+    required this.updatedAt,
+    this.user,
+  });
+
+  factory GroupMember.fromJson(Map<String, dynamic> json) {
+    return GroupMember(
+      groupId: json['group_id'],
+      userId: json['user_id'],
+      joinedAt: DateTime.parse(json['joined_at']),
+      isAdmin: json['is_admin'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      user: json['user'] != null ? User.fromJson(json['user']) : null,
+    );
+  }
+}
 
 class Group {
   final String id;
@@ -10,6 +43,10 @@ class Group {
   final DateTime createdAt;
   final DateTime? updatedAt;
 
+  // Add these fields:
+  final User? creator;
+  final List<GroupMember>? members;
+
   Group({
     String? id,
     required this.name,
@@ -19,9 +56,10 @@ class Group {
     required this.memberIds,
     DateTime? createdAt,
     this.updatedAt,
-  }) : 
-    this.id = id ?? const Uuid().v4(),
-    this.createdAt = createdAt ?? DateTime.now();
+    this.creator,
+    this.members,
+  })  : id = id ?? const Uuid().v4(),
+        createdAt = createdAt ?? DateTime.now();
 
   factory Group.fromJson(Map<String, dynamic> json) {
     return Group(
@@ -30,11 +68,15 @@ class Group {
       description: json['description'],
       avatarUrl: json['avatar_url'],
       creatorId: json['creator_id'],
-      memberIds: List<String>.from(json['member_ids'] ?? []),
+      memberIds: json['members'] != null
+          ? List<String>.from(json['members'].map((m) => m['user_id']))
+          : (json['member_ids'] != null ? List<String>.from(json['member_ids']) : []),
       createdAt: DateTime.parse(json['created_at']),
-      updatedAt: json['updated_at'] != null 
-        ? DateTime.parse(json['updated_at']) 
-        : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
+      creator: json['creator'] != null ? User.fromJson(json['creator']) : null,
+      members: json['members'] != null
+          ? List<GroupMember>.from(json['members'].map((m) => GroupMember.fromJson(m)))
+          : null,
     );
   }
 

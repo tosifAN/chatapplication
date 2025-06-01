@@ -196,6 +196,7 @@ class ApiService {
     
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
+       print("this is group data see it : $data");
       return data.map((json) => Group.fromJson(json)).toList();
     } else {
       throw Exception('Failed to get user groups: ${response.body}');
@@ -209,6 +210,7 @@ class ApiService {
     );
     
     if (response.statusCode == 200) {
+      print("this is group details : ${jsonDecode(response.body)}");
       return Group.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to get group details: ${response.body}');

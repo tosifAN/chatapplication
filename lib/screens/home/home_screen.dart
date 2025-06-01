@@ -141,6 +141,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _showCreateGroupDialog(BuildContext context, String userId) {
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
+    final ApiService _apiService = ApiService();
 
     showDialog(
       context: context,
@@ -178,9 +179,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               final description = descriptionController.text.trim();
               
               if (name.isEmpty) return;
+
+              await _apiService.createGroup(name, description, [userId]);
               
               Navigator.pop(context);
-              
+
               // Create group and navigate to group screen
               // This will be implemented with the group provider
             },
@@ -240,8 +243,8 @@ class ChatsTab extends StatelessWidget {
                     : null,
               ),
               title: Text(user.username),
-              subtitle: const Text('Last message...'), // Replace with actual last message
-              trailing: const Text('12:30 PM'), // Replace with actual timestamp
+              subtitle: const Text('.....'), // Replace with actual last message
+              trailing: const Text('*'), // Replace with actual timestamp
               onTap: () {
                 Navigator.push(
                   context,
@@ -263,13 +266,16 @@ class ChatsTab extends StatelessWidget {
 class GroupsTab extends StatelessWidget {
   final String userId;
   
-  const GroupsTab({super.key, required this.userId});
+  GroupsTab({super.key, required this.userId});
+
+  final ApiService _apiService = ApiService();
+
 
   @override
   Widget build(BuildContext context) {
     // This will be replaced with actual data from a group provider
     return FutureBuilder<List<Group>>(
-      future: Future.value([]), // Replace with actual API call
+      future: _apiService.getUserGroups(userId), // Replace with actual API call
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -280,6 +286,8 @@ class GroupsTab extends StatelessWidget {
         }
         
         final groups = snapshot.data ?? [];
+
+        print("this could be number of users : ${groups[0].memberIds}");
         
         if (groups.isEmpty) {
           return const Center(

@@ -180,7 +180,7 @@ func (uc *UserController) GetUserGroups(c *gin.Context) {
 	var groups []models.Group
 	for _, groupUser := range groupUsers {
 		var group models.Group
-		result = uc.db.Preload("Creator").First(&group, "id = ?", groupUser.GroupID)
+		result = uc.db.Preload("Creator").Preload("Members").First(&group, "id = ?", groupUser.GroupID)
 		if result.Error == nil {
 			groups = append(groups, group)
 		}
