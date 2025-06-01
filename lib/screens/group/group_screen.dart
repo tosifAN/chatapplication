@@ -55,13 +55,26 @@ class _GroupScreenState extends State<GroupScreen> {
     _mqttService.subscribeToGroup(widget.group.id);
     
     _messageSubscription = _mqttService.messageStream.listen((message) {
-      // Only add messages for this group
+      // Only add messages for this group and avoid duplicates
       if (message.groupId == widget.group.id) {
-        setState(() {
-          _messages.add(message);
-          _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-        });
-        _scrollToBottom();
+        // Skip messages from the current user as they're already added in _sendMessage
+        if (message.senderId == _currentUser.id) {
+          return; // Skip processing this message
+        }
+        
+        final alreadyExists = _messages.any((m) =>
+          m.id == message.id ||
+          (m.senderId == message.senderId &&
+           m.timestamp == message.timestamp &&
+           m.content == message.content)
+        );
+        if (!alreadyExists) {
+          setState(() {
+            _messages.add(message);
+            _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          });
+          _scrollToBottom();
+        }
       }
     });
   }
@@ -133,15 +146,18 @@ class _GroupScreenState extends State<GroupScreen> {
     );
 
     _messageController.clear();
-
-    // Add message to local list
+    
+    // Add message to local state first to avoid duplication
     setState(() {
-      _messages.insert(0, message);
+      _messages.add(message);
+      _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     });
-
+    _scrollToBottom();
+    
     // Send message via MQTT
     try {
       await _mqttService.sendMessage(message);
+      await _apiService.sendInGroupMessages(message);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending message: $e')),

@@ -168,6 +168,24 @@ class ApiService {
       throw Exception('Failed to get group messages: ${response.body}');
     }
   }
+
+  Future<Message> sendInGroupMessages(Message message) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/messages/group'),
+      headers: _headers,
+      body: jsonEncode({
+        'group_id': message.groupId,
+        'content': message.content,
+        'type': message.type.name,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return Message.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to send direct message: ${response.body}');
+    }
+  }
   
   // Group operations
   Future<Group> createGroup(String name, String description, List<String> memberIds) async {
