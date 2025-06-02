@@ -55,6 +55,10 @@ dependencies:
   
   # For handling environment variables
   flutter_dotenv: ^5.1.0
+  cloudflare_r2: ^0.0.12
+  file_picker: ^10.1.9
+
+  url_launcher: ^6.1.7
 
 dev_dependencies:
   flutter_test:

@@ -73,8 +73,7 @@ func (mc *MessageController) GetDirectMessages(c *gin.Context) {
 
 	// Get messages between the two users
 	var messages []models.Message
-	result := mc.db.Preload("Sender").Where(why
-		"(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
+	result := mc.db.Preload("Sender").Where("(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)",
 		userID, otherUserID, otherUserID, userID,
 	).Order("timestamp DESC").Limit(limit).Offset(offset).Find(&messages)
 

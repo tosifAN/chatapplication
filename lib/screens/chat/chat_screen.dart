@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:chatapplication/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../models/message.dart';
 import '../../services/api_service.dart';
 import '../../services/mqtt_service.dart';
+import '../../services/file_service.dart';
 import '../../providers/auth_provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -22,9 +25,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final ApiService _apiService = ApiService();
   final MQTTService _mqttService = MQTTService();
+  final FileService _fileService = FileService();
   
   List<Message> _messages = [];
   bool _isLoading = false;
+  bool _isUploading = false;
   late User _currentUser;
   late StreamSubscription<Message> _messageSubscription;
 
@@ -161,6 +166,10 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.info_outline),
             onPressed: () {
               // Show user profile or chat info
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ProfileScreen(user: widget.otherUser, isCurrentUser : false)),
+              );
             },
           ),
         ],
@@ -204,10 +213,11 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.attach_file),
-                  onPressed: () {
-                    // Implement file attachment
-                  },
+                  onPressed: _isUploading ? null : _handleFileAttachment,
                 ),
+                _isUploading
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const SizedBox.shrink(),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -232,6 +242,43 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+  }
+  
+Future<void> _handleFileAttachment() async {
+    final file = await _fileService.pickFile(context);
+    if (file == null) return;
+    
+    setState(() {
+      _isUploading = true;
+    });
+    
+    try {
+      final fileUrl = await _fileService.uploadFile(file, context);
+      if (fileUrl != null && mounted) {
+        // Create a file message
+        final message = Message(
+          senderId: _currentUser.id,
+          receiverId: widget.otherUser.id,
+          content: fileUrl,
+          type: MessageType.file,
+        );
+        
+        // Add message to local list
+        setState(() {
+          _messages.insert(0, message);
+        });
+        
+        // Send message via MQTT and API
+        await _mqttService.sendMessage(message);
+        await _apiService.sendDirectMessage(message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
   }
 }
 
@@ -259,36 +306,68 @@ class MessageBubble extends StatelessWidget {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
             decoration: BoxDecoration(
-              color: isMe
-                  ? Theme.of(context).primaryColor.withOpacity(0.8)
-                  : Colors.grey.shade200,
+              color: isMe ? Theme.of(context).primaryColor : Colors.grey[300],
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message.content,
-                  style: TextStyle(
-                    color: isMe ? Colors.white : Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatTime(message.timestamp),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isMe ? Colors.white.withOpacity(0.7) : Colors.black54,
-                  ),
-                ),
-              ],
-            ),
+            child: _buildMessageContent(context),
           ),
-          if (isMe) const SizedBox(width: 8),
         ],
       ),
     );
   }
+
+  Widget _buildMessageContent(BuildContext context) {
+    switch (message.type) {
+      case MessageType.file:
+        final fileName = message.content.split('/').last;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.insert_drive_file,
+                  color: isMe ? Colors.white : Colors.black87,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    fileName,
+                    style: TextStyle(
+                      color: isMe ? Colors.white : Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            GestureDetector(
+              onTap: () {
+                // Open file URL
+                // You can implement a URL launcher here
+              },
+              child: Text(
+                'Download',
+                style: TextStyle(
+                  color: isMe ? Colors.white70 : Colors.blue,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        );
+      default:
+        return Text(
+          message.content,
+          style: TextStyle(
+            color: isMe ? Colors.white : Colors.black87,
+          ),
+        );
+    }
+  }
+}
 
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
@@ -306,4 +385,3 @@ class MessageBubble extends StatelessWidget {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}, $timeStr';
     }
   }
-}

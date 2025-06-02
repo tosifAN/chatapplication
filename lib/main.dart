@@ -1,3 +1,4 @@
+import 'package:chatapplication/testing.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -65,6 +66,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
+
     // Listen to AuthProvider state changes
     final authProvider = Provider.of<AuthProvider>(context);
 
@@ -74,7 +76,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
     // Navigate based on authentication state
     return authProvider.isAuthenticated
         ? const HomeScreen()

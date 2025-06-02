@@ -9,6 +9,7 @@ import '../../models/message.dart';
 import '../../models/user.dart';
 import '../../services/api_service.dart';
 import '../../services/mqtt_service.dart';
+import '../../services/file_service.dart';
 import '../../providers/auth_provider.dart';
 
 class GroupScreen extends StatefulWidget {
@@ -25,10 +26,12 @@ class _GroupScreenState extends State<GroupScreen> {
   final ScrollController _scrollController = ScrollController();
   final ApiService _apiService = ApiService();
   final MQTTService _mqttService = MQTTService();
+  final FileService _fileService = FileService();
   
   List<Message> _messages = [];
   List<User> _members = [];
   bool _isLoading = false;
+  bool _isUploading = false;
   late User _currentUser;
   late StreamSubscription<Message> _messageSubscription;
 
@@ -306,10 +309,11 @@ class _GroupScreenState extends State<GroupScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.attach_file),
-                  onPressed: () {
-                    // Implement file attachment
-                  },
+                  onPressed: _isUploading ? null : _handleFileAttachment,
                 ),
+                _isUploading
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const SizedBox.shrink(),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -334,5 +338,44 @@ class _GroupScreenState extends State<GroupScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _handleFileAttachment() async {
+    final file = await _fileService.pickFile(context);
+    if (file == null) return;
+    
+    setState(() {
+      _isUploading = true;
+    });
+    
+    try {
+      final fileUrl = await _fileService.uploadFile(file, context);
+      if (fileUrl != null && mounted) {
+        // Create a file message
+        final message = Message(
+          senderId: _currentUser.id,
+          groupId: widget.group.id,
+          content: fileUrl,
+          type: MessageType.file,
+        );
+        
+        // Add message to local state first to avoid duplication
+        setState(() {
+          _messages.add(message);
+          _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        });
+        _scrollToBottom();
+        
+        // Send message via MQTT and API
+        await _mqttService.sendMessage(message);
+        await _apiService.sendInGroupMessages(message);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
   }
 }
