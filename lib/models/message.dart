@@ -3,6 +3,8 @@ import 'package:uuid/uuid.dart';
 enum MessageType {
   text,
   image,
+  video,
+  pdf,
   file,
   system
 }

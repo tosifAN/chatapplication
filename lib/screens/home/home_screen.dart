@@ -1,11 +1,9 @@
-import 'package:chatapplication/services/api_service.dart';
+import 'package:chatapplication/screens/home/chatstab.dart';
+import 'package:chatapplication/screens/home/groupstab.dart';
+import 'package:chatapplication/services/api/groupmessage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/user.dart';
-import '../../models/group.dart';
-import '../chat/chat_screen.dart';
-import '../group/group_screen.dart';
 import '../search/search_screen.dart';
 import '../profile/profile_screen.dart';
 import '../auth/login_screen.dart';
@@ -141,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _showCreateGroupDialog(BuildContext context, String userId) {
     final nameController = TextEditingController();
     final descriptionController = TextEditingController();
-    final ApiService _apiService = ApiService();
+    final ApiGroupMessageService _apiGroupMessageService = ApiGroupMessageService();
 
     showDialog(
       context: context,
@@ -180,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               
               if (name.isEmpty) return;
 
-              await _apiService.createGroup(name, description, [userId]);
+              await _apiGroupMessageService.createGroup(name, description, [userId]);
               
               Navigator.pop(context);
 
@@ -191,141 +189,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
-    );
-  }
-}
-
-class ChatsTab extends StatelessWidget {
-  final String userId;
-
-  ChatsTab({super.key, required this.userId});
-
-  final ApiService _apiService = ApiService();
-
-  @override
-  Widget build(BuildContext context) {
-    // This will be replaced with actual data from a chat provider
-    return FutureBuilder<List<User>>(
-      // Correctly pass the Future returned by the API call
-      future: _apiService.getRecentChats(userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
-        // snapshot.data is now directly List<User>
-        final users = snapshot.data ?? [];
-
-        if (users.isEmpty) {
-          return const Center(
-            child: Text(
-              'No chats yet. Search for users to start chatting!',
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            final user = users[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: user.avatarUrl != null
-                    ? NetworkImage(user.avatarUrl!)
-                    : null,
-                child: user.avatarUrl == null
-                    ? Text(user.username[0].toUpperCase())
-                    : null,
-              ),
-              title: Text(user.username),
-              subtitle: const Text('.....'), // Replace with actual last message
-              trailing: const Text('*'), // Replace with actual timestamp
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      otherUser: user,
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class GroupsTab extends StatelessWidget {
-  final String userId;
-  
-  GroupsTab({super.key, required this.userId});
-
-  final ApiService _apiService = ApiService();
-
-
-  @override
-  Widget build(BuildContext context) {
-    // This will be replaced with actual data from a group provider
-    return FutureBuilder<List<Group>>(
-      future: _apiService.getUserGroups(userId), // Replace with actual API call
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        
-        final groups = snapshot.data ?? [];
-
-        print("this could be number of users : ${groups[0].memberIds}");
-        
-        if (groups.isEmpty) {
-          return const Center(
-            child: Text(
-              'No groups yet. Create a group to get started!',
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
-        
-        return ListView.builder(
-          itemCount: groups.length,
-          itemBuilder: (context, index) {
-            final group = groups[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: group.avatarUrl != null
-                    ? NetworkImage(group.avatarUrl!)
-                    : null,
-                child: group.avatarUrl == null
-                    ? Text(group.name[0].toUpperCase())
-                    : null,
-              ),
-              title: Text(group.name),
-              subtitle: Text(group.description ?? 'No description'),
-              trailing: Text('${group.memberIds.length} members'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => GroupScreen(group: group),
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
     );
   }
 }

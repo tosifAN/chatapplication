@@ -1,3 +1,4 @@
+import 'package:chatapplication/util/time.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
@@ -170,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            _formatDateTime(widget.user.lastSeen),
+                            formatTime(widget.user.lastSeen),
                             style: const TextStyle(fontSize: 16),
                           ),
                         ],
@@ -231,23 +232,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
     );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
-
-    String timeStr =
-        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-
-    if (date == today) {
-      return 'Today at $timeStr';
-    } else if (date == yesterday) {
-      return 'Yesterday at $timeStr';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} at $timeStr';
-    }
   }
 }

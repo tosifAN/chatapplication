@@ -46,7 +46,8 @@ class FileService {
   Future<File?> pickFile(BuildContext context) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.any,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'pdf'],
       );
 
       if (result != null && result.files.single.path != null) {
@@ -57,6 +58,17 @@ class FileService {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('File size exceeds 3MB limit')),
+            );
+          }
+          return null;
+        }
+        
+        // Verify file type is allowed
+        final fileExtension = path.extension(file.path).toLowerCase();
+        if (!isAllowedFileType(fileExtension)) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Only images, videos, and PDF files are allowed')),
             );
           }
           return null;
@@ -143,24 +155,36 @@ class FileService {
         return 'image/gif';
       case '.pdf':
         return 'application/pdf';
-      case '.doc':
-        return 'application/msword';
-      case '.docx':
-        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      case '.xls':
-        return 'application/vnd.ms-excel';
-      case '.xlsx':
-        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      case '.txt':
-        return 'text/plain';
-      case '.mp3':
-        return 'audio/mpeg';
       case '.mp4':
         return 'video/mp4';
-      case '.zip':
-        return 'application/zip';
+      case '.mov':
+        return 'video/quicktime';
       default:
         return 'application/octet-stream'; // Default binary file type
     }
+  }
+  
+  // Check if file type is allowed (only images, videos, and PDFs)
+  bool isAllowedFileType(String fileExtension) {
+    final allowed = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mov', '.pdf'];
+    return allowed.contains(fileExtension.toLowerCase());
+  }
+  
+  // Determine if file is an image
+  bool isImageFile(String filePath) {
+    final ext = path.extension(filePath).toLowerCase();
+    return ['.jpg', '.jpeg', '.png', '.gif'].contains(ext);
+  }
+  
+  // Determine if file is a video
+  bool isVideoFile(String filePath) {
+    final ext = path.extension(filePath).toLowerCase();
+    return ['.mp4', '.mov'].contains(ext);
+  }
+  
+  // Determine if file is a PDF
+  bool isPdfFile(String filePath) {
+    final ext = path.extension(filePath).toLowerCase();
+    return ext == '.pdf';
   }
 }

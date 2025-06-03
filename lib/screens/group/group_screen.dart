@@ -2,14 +2,15 @@ import 'dart:async';
 import 'package:chatapplication/screens/group/adduserdialogbox.dart';
 import 'package:chatapplication/screens/group/group_message_bubble.dart';
 import 'package:chatapplication/screens/group/infodialog.dart';
+import 'package:chatapplication/services/api/groupmessage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/group.dart';
 import '../../models/message.dart';
 import '../../models/user.dart';
-import '../../services/api_service.dart';
-import '../../services/mqtt_service.dart';
-import '../../services/file_service.dart';
+import '../../services/api/api_service.dart';
+import '../../services/mqtt/mqtt_service.dart';
+import '../../services/file/file_service.dart';
 import '../../providers/auth_provider.dart';
 
 class GroupScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _GroupScreenState extends State<GroupScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ApiService _apiService = ApiService();
+  final ApiGroupMessageService _apiGroupMessageService = ApiGroupMessageService();
   final MQTTService _mqttService = MQTTService();
   final FileService _fileService = FileService();
   
@@ -88,7 +90,7 @@ class _GroupScreenState extends State<GroupScreen> {
     });
 
     try {
-      final messages = await _apiService.getGroupMessages(widget.group.id);
+      final messages = await _apiGroupMessageService.getGroupMessages(widget.group.id);
       
       setState(() {
         _messages = messages;
@@ -110,7 +112,7 @@ class _GroupScreenState extends State<GroupScreen> {
   Future<void> _loadGroupMembers() async {
     try {
       // Fetch group details to get updated member list
-      final group = await _apiService.getGroupDetails(widget.group.id);
+      final group = await _apiGroupMessageService.getGroupDetails(widget.group.id);
       // Fetch user details for each member
       final membersFutures = group.memberIds.map((userId) => _apiService.getUserProfile(userId));
       final members = await Future.wait(membersFutures);
@@ -160,7 +162,7 @@ class _GroupScreenState extends State<GroupScreen> {
     // Send message via MQTT
     try {
       await _mqttService.sendMessage(message);
-      await _apiService.sendInGroupMessages(message);
+      await _apiGroupMessageService.sendInGroupMessages(message);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending message: $e')),
@@ -183,7 +185,7 @@ class _GroupScreenState extends State<GroupScreen> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await _apiService.removeUserFromGroup(widget.group.id, _currentUser.id);
+                await _apiGroupMessageService.removeUserFromGroup(widget.group.id, _currentUser.id);
                 if (!mounted) return;
                 Navigator.pop(context); // Go back to home screen
               } catch (e) {
@@ -242,6 +244,7 @@ class _GroupScreenState extends State<GroupScreen> {
                 members: _members,
                 currentUser: _currentUser,
                 apiService: _apiService,
+                apiGroupMessageService: _apiGroupMessageService,
                 refreshMembers: _loadGroupMembers,
               );
             },
@@ -351,12 +354,24 @@ class _GroupScreenState extends State<GroupScreen> {
     try {
       final fileUrl = await _fileService.uploadFile(file, context);
       if (fileUrl != null && mounted) {
+        // Determine message type based on file extension
+        MessageType messageType;
+        if (_fileService.isImageFile(file.path)) {
+          messageType = MessageType.image;
+        } else if (_fileService.isVideoFile(file.path)) {
+          messageType = MessageType.video;
+        } else if (_fileService.isPdfFile(file.path)) {
+          messageType = MessageType.pdf;
+        } else {
+          messageType = MessageType.file;
+        }
+        
         // Create a file message
         final message = Message(
           senderId: _currentUser.id,
           groupId: widget.group.id,
           content: fileUrl,
-          type: MessageType.file,
+          type: messageType,
         );
         
         // Add message to local state first to avoid duplication
@@ -368,7 +383,7 @@ class _GroupScreenState extends State<GroupScreen> {
         
         // Send message via MQTT and API
         await _mqttService.sendMessage(message);
-        await _apiService.sendInGroupMessages(message);
+        await _apiGroupMessageService.sendInGroupMessages(message);
       }
     } finally {
       if (mounted) {

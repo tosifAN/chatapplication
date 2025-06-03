@@ -1,11 +1,16 @@
+import 'package:chatapplication/services/api/auth.dart';
+import 'package:chatapplication/services/api/token.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/api_service.dart';
-import '../services/mqtt_service.dart';
+import '../services/api/api_service.dart';
+import '../services/mqtt/mqtt_service.dart';
 import '../models/user.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
+  final ApiAuthService _apiAuthService = ApiAuthService();
+  final ApiAuthTokenService _apiAuthTokenService = ApiAuthTokenService();
+
   final MQTTService _mqttService = MQTTService();
   
   User? _currentUser;
@@ -27,7 +32,7 @@ class AuthProvider with ChangeNotifier {
       final token = prefs.getString('auth_token');
       
       if (userId != null && token != null) {
-        _apiService.setToken(token);
+        _apiAuthTokenService.setToken(token);
         
         // Get user profile
         _currentUser = await _apiService.getUserProfile(userId);
@@ -54,7 +59,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _apiService.login(email, password);
+      final response = await _apiAuthService.login(email, password);
       
       // Save auth data
       final prefs = await SharedPreferences.getInstance();
@@ -81,7 +86,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      await _apiService.register(username, email, password);
+      await _apiAuthService.register(username, email, password);
       
       // Login after successful registration
       await login(email, password);
@@ -103,7 +108,7 @@ class AuthProvider with ChangeNotifier {
       _mqttService.disconnect();
       
       // Clear auth data
-      _apiService.clearToken();
+      _apiAuthTokenService.clearToken();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('user_id');
       await prefs.remove('auth_token');

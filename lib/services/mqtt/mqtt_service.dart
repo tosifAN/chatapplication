@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../models/message.dart';
-import '../models/user.dart';
+import '../../models/message.dart';
 
 class MQTTService {
   MqttServerClient? _client;

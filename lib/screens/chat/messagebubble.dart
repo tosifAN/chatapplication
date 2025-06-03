@@ -1,18 +1,15 @@
-import 'package:chatapplication/util/time.dart';
 import 'package:flutter/material.dart';
-import 'package:chatapplication/models/message.dart';
-import 'package:chatapplication/models/user.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/message.dart';
 
-class GroupMessageBubble extends StatelessWidget {
+class MessageBubble extends StatelessWidget {
   final Message message;
   final bool isMe;
-  final User sender;
 
-  const GroupMessageBubble({super.key, 
+  const MessageBubble({
+    super.key,
     required this.message,
     required this.isMe,
-    required this.sender,
   });
 
   @override
@@ -21,56 +18,18 @@ class GroupMessageBubble extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
       child: Row(
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isMe) ...[  
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: sender.avatarUrl != null
-                  ? NetworkImage(sender.avatarUrl!)
-                  : null,
-              child: sender.avatarUrl == null
-                  ? Text(sender.username[0].toUpperCase(), style: const TextStyle(fontSize: 12))
-                  : null,
+          if (!isMe) const SizedBox(width: 8),
+          Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.7,
             ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                if (!isMe)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4.0),
-                    child: Text(
-                      sender.username,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                  ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                  decoration: BoxDecoration(
-                    color: isMe ? Colors.blue : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: _buildMessageContent(context),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    formatTime(message.timestamp),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            decoration: BoxDecoration(
+              color: isMe ? Theme.of(context).primaryColor : Colors.grey[300],
+              borderRadius: BorderRadius.circular(20),
             ),
+            child: _buildMessageContent(context),
           ),
         ],
       ),
@@ -196,18 +155,16 @@ class GroupMessageBubble extends StatelessWidget {
             GestureDetector(
               onTap: () async {
                 // Open PDF in external viewer
-                final Uri url = Uri.parse(message.content);
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url);
+                final url = message.content;
+                if (await canLaunch(url)) {
+                  await launch(url);
                 }
               },
-
               child: Text(
                 'Open PDF',
                 style: TextStyle(
                   color: isMe ? Colors.white70 : Colors.blue,
                   decoration: TextDecoration.underline,
-                  fontSize: 12,
                 ),
               ),
             ),
@@ -224,7 +181,6 @@ class GroupMessageBubble extends StatelessWidget {
                 Icon(
                   Icons.insert_drive_file,
                   color: isMe ? Colors.white : Colors.black87,
-                  size: 20,
                 ),
                 const SizedBox(width: 8),
                 Flexible(
@@ -242,9 +198,9 @@ class GroupMessageBubble extends StatelessWidget {
             GestureDetector(
               onTap: () async {
                 // Open file URL
-                final Uri url = Uri.parse(message.content);
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url);
+                final url = message.content;
+                if (await canLaunch(url)) {
+                  await launch(url);
                 }
               },
               child: Text(
@@ -252,7 +208,6 @@ class GroupMessageBubble extends StatelessWidget {
                 style: TextStyle(
                   color: isMe ? Colors.white70 : Colors.blue,
                   decoration: TextDecoration.underline,
-                  fontSize: 12,
                 ),
               ),
             ),

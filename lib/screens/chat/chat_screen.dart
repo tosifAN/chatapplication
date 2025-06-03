@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:io';
-
+import 'package:chatapplication/screens/chat/messagebubble.dart';
 import 'package:chatapplication/screens/profile/profile_screen.dart';
+import 'package:chatapplication/services/api/directmessage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../models/message.dart';
-import '../../services/api_service.dart';
-import '../../services/mqtt_service.dart';
-import '../../services/file_service.dart';
+import '../../services/mqtt/mqtt_service.dart';
+import '../../services/file/file_service.dart';
 import '../../providers/auth_provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -23,7 +22,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final ApiService _apiService = ApiService();
+  final ApiDirectMessageService _apiDirectMessageService = ApiDirectMessageService();
   final MQTTService _mqttService = MQTTService();
   final FileService _fileService = FileService();
   
@@ -69,7 +68,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
-      final messages = await _apiService.getDirectMessages(
+      final messages = await _apiDirectMessageService.getDirectMessages(
         _currentUser.id,
         widget.otherUser.id,
       );
@@ -123,7 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Send message via MQTT
     try {
       await _mqttService.sendMessage(message);
-      await _apiService.sendDirectMessage(message);
+      await _apiDirectMessageService.sendDirectMessage(message);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error sending message: $e')),
@@ -255,12 +254,24 @@ Future<void> _handleFileAttachment() async {
     try {
       final fileUrl = await _fileService.uploadFile(file, context);
       if (fileUrl != null && mounted) {
+        // Determine message type based on file extension
+        MessageType messageType;
+        if (_fileService.isImageFile(file.path)) {
+          messageType = MessageType.image;
+        } else if (_fileService.isVideoFile(file.path)) {
+          messageType = MessageType.video;
+        } else if (_fileService.isPdfFile(file.path)) {
+          messageType = MessageType.pdf;
+        } else {
+          messageType = MessageType.file;
+        }
+        
         // Create a file message
         final message = Message(
           senderId: _currentUser.id,
           receiverId: widget.otherUser.id,
           content: fileUrl,
-          type: MessageType.file,
+          type: messageType,
         );
         
         // Add message to local list
@@ -270,7 +281,7 @@ Future<void> _handleFileAttachment() async {
         
         // Send message via MQTT and API
         await _mqttService.sendMessage(message);
-        await _apiService.sendDirectMessage(message);
+        await _apiDirectMessageService.sendDirectMessage(message);
       }
     } finally {
       if (mounted) {
@@ -281,107 +292,3 @@ Future<void> _handleFileAttachment() async {
     }
   }
 }
-
-class MessageBubble extends StatelessWidget {
-  final Message message;
-  final bool isMe;
-
-  const MessageBubble({
-    super.key,
-    required this.message,
-    required this.isMe,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!isMe) const SizedBox(width: 8),
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-            decoration: BoxDecoration(
-              color: isMe ? Theme.of(context).primaryColor : Colors.grey[300],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: _buildMessageContent(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageContent(BuildContext context) {
-    switch (message.type) {
-      case MessageType.file:
-        final fileName = message.content.split('/').last;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.insert_drive_file,
-                  color: isMe ? Colors.white : Colors.black87,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    fileName,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: () {
-                // Open file URL
-                // You can implement a URL launcher here
-              },
-              child: Text(
-                'Download',
-                style: TextStyle(
-                  color: isMe ? Colors.white70 : Colors.blue,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
-        );
-      default:
-        return Text(
-          message.content,
-          style: TextStyle(
-            color: isMe ? Colors.white : Colors.black87,
-          ),
-        );
-    }
-  }
-}
-
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
-
-    String timeStr = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    
-    if (messageDate == today) {
-      return timeStr;
-    } else if (messageDate == yesterday) {
-      return 'Yesterday, $timeStr';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}, $timeStr';
-    }
-  }

@@ -1,8 +1,9 @@
+import 'package:chatapplication/services/api/groupmessage.dart';
 import 'package:flutter/material.dart'; 
 import 'package:chatapplication/models/user.dart';
 import 'dart:async';
 import '../../models/group.dart';
-import '../../services/api_service.dart';
+import '../../services/api/api_service.dart';
 
 void showAddUserDialog({
   required BuildContext context,
@@ -10,6 +11,7 @@ void showAddUserDialog({
   required List<User> members,
   required User currentUser,
   required ApiService apiService,
+  required ApiGroupMessageService apiGroupMessageService,
   required Future<void> Function() refreshMembers,
 }) {
   final TextEditingController _addUserSearchController = TextEditingController();
@@ -251,7 +253,7 @@ void showAddUserDialog({
                                             onTap: () async {
                                               closeDialog(); // Close dialog
                                               try {
-                                                await apiService.addUserToGroup(group.id, user.id);
+                                                await apiGroupMessageService.addUserToGroup(group.id, user.id);
                                                 await refreshMembers();
                                                 ScaffoldMessenger.of(context).showSnackBar(
                                                   SnackBar(
