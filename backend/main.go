@@ -102,6 +102,7 @@ func main() {
 			groups.PUT("/:id", groupController.UpdateGroup)
 			groups.POST("/:id/members", groupController.AddMember)
 			groups.DELETE("/:id/members/:userId", groupController.RemoveMember)
+			groups.DELETE("/:id", groupController.DeleteGroup) // <-- Add this line
 		}
 	}
 

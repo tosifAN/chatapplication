@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -194,11 +193,12 @@ func (mc *MessageController) SendDirectMessage(c *gin.Context) {
 	}
 
 	// Publish message to MQTT
-	err := mc.mqttClient.PublishDirectMessage(&message)
-	if err != nil {
-		// Log error but don't fail the request
-		log.Printf("Failed to publish message to MQTT: %v", err)
-	}
+	//I am stopping it because we have already publishing from frontend
+	//err := mc.mqttClient.PublishDirectMessage(&message)
+	//if err != nil {
+	// Log error but don't fail the request
+	//log.Printf("Failed to publish message to MQTT: %v", err)
+	//}
 
 	// Load sender details
 	mc.db.First(&message.Sender, "id = ?", message.SenderID)
@@ -312,11 +312,12 @@ func (mc *MessageController) SendGroupMessage(c *gin.Context) {
 	}
 
 	// Publish message to MQTT
-	err := mc.mqttClient.PublishGroupMessage(&message)
-	if err != nil {
-		// Log error but don't fail the request
-		log.Printf("Failed to publish message to MQTT: %v", err)
-	}
+	//Commenting because we already did from frontend
+	//err := mc.mqttClient.PublishGroupMessage(&message)
+	//if err != nil {
+	// Log error but don't fail the request
+	//	log.Printf("Failed to publish message to MQTT: %v", err)
+	//}
 
 	// Load sender details
 	mc.db.First(&message.Sender, "id = ?", message.SenderID)

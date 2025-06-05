@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/message.dart';
-import '../image/image_view_page.dart';
-import '../video/video_view_page.dart';
+import '../image/enhanced_image_view.dart';
+import '../video/enhanced_video_view.dart';
 
 
 class MessageBubble extends StatelessWidget {
@@ -23,19 +24,77 @@ class MessageBubble extends StatelessWidget {
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           if (!isMe) const SizedBox(width: 8),
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7,
+          GestureDetector(
+            onLongPress: () {
+              _showMessageOptions(context);
+            },
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              decoration: BoxDecoration(
+                color: isMe ? Theme.of(context).primaryColor : Colors.grey[300],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: _buildMessageContent(context),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-            decoration: BoxDecoration(
-              color: isMe ? Theme.of(context).primaryColor : Colors.grey[300],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: _buildMessageContent(context),
           ),
         ],
       ),
+    );
+  }
+  
+  void _showMessageOptions(BuildContext context) {
+    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+    final position = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+    
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx + size.width,
+        position.dy + size.height,
+      ),
+      items: [
+        PopupMenuItem(
+          child: const Text('Copy'),
+          onTap: () => _copyMessage(context),
+        ),
+        PopupMenuItem(
+          child: const Text('Forward'),
+          onTap: () => _forwardMessage(context),
+        ),
+        if (isMe)
+          PopupMenuItem(
+            child: const Text('Delete'),
+            onTap: () => _deleteMessage(context),
+          ),
+      ],
+    );
+  }
+
+  void _deleteMessage(BuildContext context) {
+    // TODO: Implement message deletion functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message deletion will be implemented')),
+    );
+  }
+
+  void _copyMessage(BuildContext context) {
+    // Copy message content to clipboard
+    Clipboard.setData(ClipboardData(text: message.content));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message copied to clipboard')),
+    );
+  }
+
+  void _forwardMessage(BuildContext context) {
+    // TODO: Implement message forwarding functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message forwarding will be implemented')),
     );
   }
 
@@ -50,7 +109,11 @@ class MessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ImageViewPage(imageUrl: message.content),
+                    builder: (_) => EnhancedImageView(
+                      imageUrl: message.content,
+                      messageId: message.id,
+                      onDelete: isMe ? () => _deleteMessage(context) : null,
+                    ),
                   ),
                 );
               },
@@ -96,7 +159,11 @@ class MessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => VideoViewPage(videoUrl: message.content),
+                    builder: (_) => EnhancedVideoView(
+                      videoUrl: message.content,
+                      messageId: message.id,
+                      onDelete: isMe ? () => _deleteMessage(context) : null,
+                    ),
                   ),
                 );
               },

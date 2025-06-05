@@ -1,9 +1,10 @@
-import 'package:chatapplication/screens/image/image_view_page.dart';
-import 'package:chatapplication/screens/video/video_view_page.dart';
+import 'package:chatapplication/screens/image/enhanced_image_view.dart';
+import 'package:chatapplication/screens/video/enhanced_video_view.dart';
 import 'package:chatapplication/util/time.dart';
 import 'package:flutter/material.dart';
 import 'package:chatapplication/models/message.dart';
 import 'package:chatapplication/models/user.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class GroupMessageBubble extends StatelessWidget {
@@ -53,13 +54,18 @@ class GroupMessageBubble extends StatelessWidget {
                       ),
                     ),
                   ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                  decoration: BoxDecoration(
-                    color: isMe ? Colors.blue : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(16),
+                GestureDetector(
+                  onLongPress: () {
+                    _showMessageOptions(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: isMe ? Colors.blue : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: _buildMessageContent(context),
                   ),
-                  child: _buildMessageContent(context),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0),
@@ -78,6 +84,67 @@ class GroupMessageBubble extends StatelessWidget {
       ),
     );
   }
+  
+  void _showMessageOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.copy),
+            title: const Text('Copy'),
+            onTap: () {
+              Navigator.pop(context);
+              _copyMessage(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.forward),
+            title: const Text('Forward'),
+            onTap: () {
+              Navigator.pop(context);
+              _forwardMessage(context);
+            },
+          ),
+          if (isMe)
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pop(context);
+                _deleteMessage(context);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteMessage(BuildContext context) {
+    // TODO: Implement message deletion functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message deletion will be implemented')),
+    );
+  }
+
+  void _copyMessage(BuildContext context) {
+    // Copy message content to clipboard
+    Clipboard.setData(ClipboardData(text: message.content));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message copied to clipboard')),
+    );
+  }
+
+  void _forwardMessage(BuildContext context) {
+    // TODO: Implement message forwarding functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message forwarding will be implemented')),
+    );
+  }
 
   Widget _buildMessageContent(BuildContext context) {
     switch (message.type) {
@@ -90,7 +157,12 @@ class GroupMessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ImageViewPage(imageUrl: message.content),
+                    builder: (_) => EnhancedImageView(
+                      imageUrl: message.content,
+                      messageId: message.id,
+                      isGroupMessage: true,
+                      onDelete: isMe ? () => _deleteMessage(context) : null,
+                    ),
                   ),
                 );
               },
@@ -136,7 +208,12 @@ class GroupMessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => VideoViewPage(videoUrl: message.content),
+                    builder: (_) => EnhancedVideoView(
+                      videoUrl: message.content,
+                      messageId: message.id,
+                      isGroupMessage: true,
+                      onDelete: isMe ? () => _deleteMessage(context) : null,
+                    ),
                   ),
                 );
               },

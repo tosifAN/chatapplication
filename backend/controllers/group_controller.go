@@ -429,3 +429,48 @@ func (gc *GroupController) RemoveMember(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User removed from group successfully"})
 }
+
+// DeleteGroup deletes a group (only by admin/creator)
+func (gc *GroupController) DeleteGroup(c *gin.Context) {
+	groupID := c.Param("id")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Group ID is required"})
+		return
+	}
+
+	// Get the authenticated user ID from the context
+	authUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Check if the group exists
+	var group models.Group
+	result := gc.db.First(&group, "id = ?", groupID)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Group not found"})
+		return
+	}
+
+	// Only allow the creator/admin to delete the group
+	if group.CreatorID != authUserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only the group creator can delete the group"})
+		return
+	}
+
+	// Delete all group users (memberships)
+	gc.db.Where("group_id = ?", groupID).Delete(&models.GroupUser{})
+
+	// Delete all group messages
+	gc.db.Where("group_id = ?", groupID).Delete(&models.Message{})
+
+	// Delete the group itself
+	result = gc.db.Delete(&group)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete group"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Group deleted successfully"})
+}

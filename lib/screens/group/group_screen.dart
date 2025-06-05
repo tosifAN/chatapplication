@@ -171,11 +171,15 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   void _showLeaveGroupDialog() {
+    final bool isAdmin = _currentUser.id == widget.group.creatorId;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Leave Group'),
-        content: const Text('Are you sure you want to leave this group?'),
+        title: Text(isAdmin ? 'Leave or Delete Group' : 'Leave Group'),
+        content: Text(isAdmin 
+          ? 'As the admin, you can leave the group or delete it entirely.'
+          : 'Are you sure you want to leave this group?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -195,6 +199,48 @@ class _GroupScreenState extends State<GroupScreen> {
               }
             },
             child: const Text('Leave', style: TextStyle(color: Colors.red)),
+          ),
+          if (isAdmin)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showDeleteGroupDialog();
+              },
+              child: const Text('Delete Group', style: TextStyle(color: Colors.red)),
+            ),
+        ],
+      ),
+    );
+  }
+  
+  void _showDeleteGroupDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Group'),
+        content: const Text('Are you sure you want to delete this group? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _apiGroupMessageService.deleteGroup(widget.group.id);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Group deleted successfully')),
+                );
+                Navigator.pop(context); // Go back to home screen
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error deleting group: $e')),
+                );
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -258,6 +304,20 @@ class _GroupScreenState extends State<GroupScreen> {
                 members: _members,
                 currentUser: _currentUser,
                 onLeaveGroup: _showLeaveGroupDialog,
+                onRefreshMembers: _loadGroupMembers,
+                onRemoveMember: (User member) async {
+                  try {
+                    await _apiGroupMessageService.removeUserFromGroup(widget.group.id, member.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${member.username} removed from group')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error removing member: $e')),
+                    );
+                  }
+                },
+                onDeleteGroup: _showDeleteGroupDialog, // <-- Add this line
               );
             },
           ),

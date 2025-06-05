@@ -8,6 +8,9 @@ void showGroupInfo({
   required List<User> members,
   required User currentUser,
   required VoidCallback onLeaveGroup,
+  required Future<void> Function() onRefreshMembers,
+  required Future<void> Function(User member) onRemoveMember,
+  required VoidCallback onDeleteGroup, // <-- Add this line
 }) {
   showModalBottomSheet(
     context: context,
@@ -91,6 +94,7 @@ void showGroupInfo({
                     final member = members[index];
                     final isCreator = member.id == group.creatorId;
                     final isCurrentUser = member.id == currentUser.id;
+                    final isAdmin = currentUser.id == group.creatorId;
 
                     return ListTile(
                       leading: CircleAvatar(
@@ -112,7 +116,21 @@ void showGroupInfo({
                           ? const Text('Group Admin', style: TextStyle(color: Colors.blue))
                           : null,
                       trailing: isCreator || !isCurrentUser
-                          ? null
+                          ? (isAdmin && !isCurrentUser && !isCreator ? 
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                onPressed: () {
+                                  _showRemoveMemberDialog(
+                                    context,
+                                    group,
+                                    member,
+                                    () async {
+                                      await onRemoveMember(member); // <-- Use the new callback
+                                      await onRefreshMembers();
+                                    },
+                                  );
+                                },
+                              ) : null)
                           : IconButton(
                               icon: const Icon(Icons.exit_to_app),
                               onPressed: () {
@@ -124,10 +142,51 @@ void showGroupInfo({
                   },
                 ),
               ),
+              if (currentUser.id == group.creatorId)
+                Padding(
+                  padding: const EdgeInsets.only(top: 24.0),
+                  child: Center(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onDeleteGroup();
+                      },
+                      child: const Text('Delete Group'),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
       ),
+    ),
+  );
+}
+
+void _showRemoveMemberDialog(BuildContext context, Group group, User member, VoidCallback onRemoved) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Remove Member'),
+      content: Text('Are you sure you want to remove ${member.username} from the group?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            onRemoved();
+            // You should also call your API to remove the member here
+          },
+          child: const Text('Remove', style: TextStyle(color: Colors.red)),
+        ),
+      ],
     ),
   );
 }

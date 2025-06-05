@@ -115,4 +115,14 @@ class ApiGroupMessageService {
       throw Exception('Failed to remove user from group: ${response.body}');
     }
   }
+  
+  Future<void> deleteGroup(String groupId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/groups/$groupId'),
+      headers: getAuthHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete group: ${response.body}');
+    }
+  }
 }
