@@ -44,4 +44,34 @@ class ApiDirectMessageService {
       throw Exception('Failed to send direct message: ${response.body}');
     }
   }
+
+  // Update the method signature to accept List<String>
+  Future<bool> makeMessagesSeen(List<String> messageIds) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/messages/mark-as-read'),
+      headers: getAuthHeaders(),
+      body: jsonEncode({
+        'message_ids' : messageIds,
+      }),
+    );
+    if (response.statusCode == 201) {
+      return true;
+    } else {
+      throw Exception('Failed to makeMessagesSeen: ${response.body}');
+    }
+  }
+
+  // Update the method signature to accept List<String>
+  Future<int> getUnseenMessageCountBTUser(String userId, String otherUserId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/messages/direct/unseen-count/$userId/$otherUserId'),
+      headers: getAuthHeaders(),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['unseen_count'] ?? 0;
+    } else {
+      throw Exception('Failed to get unseen message count: ${response.body}');
+    }
+  }
 }

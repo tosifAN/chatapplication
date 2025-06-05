@@ -1,4 +1,5 @@
 import 'package:chatapplication/services/api/api_service.dart';
+import 'package:chatapplication/services/api/directmessage.dart'; // <-- Add this import
 import 'package:flutter/material.dart';
 import '../../models/user.dart';
 import '../chat/chat_screen.dart';
@@ -9,6 +10,7 @@ class ChatsTab extends StatelessWidget {
   ChatsTab({super.key, required this.userId});
 
   final ApiService _apiService = ApiService();
+  final ApiDirectMessageService _directMessageService = ApiDirectMessageService(); // <-- Add this
 
   @override
   Widget build(BuildContext context) {
@@ -50,9 +52,54 @@ class ChatsTab extends StatelessWidget {
                     ? Text(user.username[0].toUpperCase())
                     : null,
               ),
+              // --- Keep only the new subtitle and trailing widgets ---
+              subtitle: FutureBuilder<int>(
+                future: _directMessageService.getUnseenMessageCountBTUser(userId, user.id),
+                builder: (context, countSnapshot) {
+                  if (countSnapshot.connectionState == ConnectionState.waiting) {
+                    return const Text('Loading...');
+                  }
+                  if (countSnapshot.hasError) {
+                    return const Text('Error');
+                  }
+                  final unseenCount = countSnapshot.data ?? 0;
+                  return Text(
+                    unseenCount > 0
+                        ? 'You have $unseenCount unread message${unseenCount > 1 ? 's' : ''}'
+                        : 'No unread messages',
+                    style: TextStyle(
+                      fontWeight: unseenCount > 0 ? FontWeight.bold : FontWeight.normal,
+                      color: unseenCount > 0 ? Colors.red : null,
+                    ),
+                  );
+                },
+              ),
+              trailing: FutureBuilder<int>(
+                future: _directMessageService.getUnseenMessageCountBTUser(userId, user.id),
+                builder: (context, countSnapshot) {
+                  if (countSnapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
+                  }
+                  if (countSnapshot.hasError) {
+                    return const Icon(Icons.error, color: Colors.red);
+                  }
+                  final unseenCount = countSnapshot.data ?? 0;
+                  return unseenCount > 0
+                      ? CircleAvatar(
+                          radius: 12,
+                          backgroundColor: Colors.red,
+                          child: Text(
+                            unseenCount.toString(),
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        )
+                      : const SizedBox.shrink();
+                },
+              ),
               title: Text(user.username),
-              subtitle: const Text('.....'), // Replace with actual last message
-              trailing: const Text('*'), // Replace with actual timestamp
+              // REMOVE the following lines:
+              // subtitle: const Text('.....'), // Replace with actual last message
+              // trailing: const Text('*'), // Replace with actual timestamp
               onTap: () {
                 Navigator.push(
                   context,

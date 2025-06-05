@@ -89,6 +89,8 @@ func main() {
 			messages.POST("/direct", messageController.SendDirectMessage)
 			messages.GET("/group/:groupId", messageController.GetGroupMessages)
 			messages.POST("/group", messageController.SendGroupMessage)
+			messages.POST("/mark-as-read", messageController.MarkMessagesAsRead)
+			messages.GET("/direct/unseen-count/:userId/:otherUserId", messageController.GetUnseenMessagesBWCount)
 		}
 
 		// Group routes

@@ -85,6 +85,69 @@ func (mc *MessageController) GetDirectMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, messages)
 }
 
+// GetUnseenMessagesBWCount gets number of unseen message between 2 user.
+func (mc *MessageController) GetUnseenMessagesBWCount(c *gin.Context) {
+	userID := c.Param("userId")
+	otherUserID := c.Param("otherUserId")
+
+	// Get the authenticated user ID from the context
+	authUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Check if the authenticated user is one of the participants
+	if authUserID != userID && authUserID != otherUserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only access your own messages"})
+		return
+	}
+
+	// Only count unseen messages where the authenticated user is the receiver
+	var count int64
+	result := mc.db.Model(&models.Message{}).
+		Where("sender_id = ? AND receiver_id = ? AND is_read = ?", otherUserID, userID, false).
+		Count(&count)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count unseen messages"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"unseen_count": count})
+}
+
+// GetUnseenMessagesALLCount gets number of unseen message between all user.
+func (mc *MessageController) GetUnseenMessagesALLCount(c *gin.Context) {
+	userID := c.Param("userId")
+
+	// Get the authenticated user ID from the context
+	authUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Only allow the user to access their own unseen messages
+	if authUserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only access your own messages"})
+		return
+	}
+
+	// Count all unseen messages where the user is the receiver
+	var count int64
+	result := mc.db.Model(&models.Message{}).
+		Where("receiver_id = ? AND is_read = ?", userID, false).
+		Count(&count)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count unseen messages"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"unseen_count": count})
+}
+
 // SendDirectMessage sends a direct message to another user
 func (mc *MessageController) SendDirectMessage(c *gin.Context) {
 	// Get the authenticated user ID from the context
@@ -259,4 +322,38 @@ func (mc *MessageController) SendGroupMessage(c *gin.Context) {
 	mc.db.First(&message.Sender, "id = ?", message.SenderID)
 
 	c.JSON(http.StatusCreated, message)
+}
+
+// MarkMessagesAsReadRequest represents the request body for marking messages as read
+type MarkMessagesAsReadRequest struct {
+	MessageIDs []string `json:"message_ids" binding:"required"`
+}
+
+// MarkMessagesAsRead marks one or more messages as read by the receiver
+func (mc *MessageController) MarkMessagesAsRead(c *gin.Context) {
+	// Get the authenticated user ID from the context
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Parse request body
+	var req MarkMessagesAsReadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Update messages where the receiver is the current user
+	result := mc.db.Model(&models.Message{}).
+		Where("id IN ? AND receiver_id = ?", req.MessageIDs, userID).
+		Update("is_read", true)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to mark messages as read"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"updated": result.RowsAffected})
 }

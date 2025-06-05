@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:chatapplication/screens/chat/messagebubble.dart';
 import 'package:chatapplication/screens/profile/profile_screen.dart';
 import 'package:chatapplication/services/api/directmessage.dart';
+import 'package:chatapplication/services/file/file_service.dart';
+import 'package:chatapplication/services/mqtt/mqtt_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../models/message.dart';
-import '../../services/mqtt/mqtt_service.dart';
-import '../../services/file/file_service.dart';
 import '../../providers/auth_provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -72,7 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _currentUser.id,
         widget.otherUser.id,
       );
-      
+      print("thats we are getting : ${messages[0].senderId}");
       setState(() {
         _messages = messages;
         _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -80,6 +80,7 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       
       _scrollToBottom();
+      await _makeMessagesSeen(); 
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -87,6 +88,24 @@ class _ChatScreenState extends State<ChatScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading messages: $e')),
       );
+    }
+  }
+  Future<void> _makeMessagesSeen() async {
+    try {
+      // Filter messages for unread messages received by the current user
+      List<String> messageIds = _messages
+          .where((msg) => msg.receiverId == _currentUser.id && !msg.isRead)
+          .map((msg) => msg.id)
+          .toList();
+      print("and this is messages : $_messages");
+      print("this is messageids that are unseen $messageIds");
+      if (messageIds.isEmpty) return;
+
+      final _ = await _apiDirectMessageService.makeMessagesSeen(
+        messageIds,
+      );
+    } catch (e) {
+      print("recieved error while sending the api to make message seen");
     }
   }
 
@@ -105,6 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
+
     final message = Message(
       senderId: _currentUser.id,
       receiverId: widget.otherUser.id,
