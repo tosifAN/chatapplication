@@ -1,20 +1,22 @@
+import 'package:chatapplication/services/api/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/message.dart';
 import '../image/enhanced_image_view.dart';
 import '../video/enhanced_video_view.dart';
-
-
+import '../forward/forward_message_screen.dart';
 class MessageBubble extends StatelessWidget {
   final Message message;
   final bool isMe;
 
-  const MessageBubble({
+  MessageBubble({
     super.key,
     required this.message,
     required this.isMe,
   });
+
+  final ApiService _apiService = ApiService();
 
   @override
   Widget build(BuildContext context) {
@@ -76,11 +78,17 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  void _deleteMessage(BuildContext context) {
-    // TODO: Implement message deletion functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message deletion will be implemented')),
-    );
+  Future<void> _deleteMessage(BuildContext context) async {
+     try {
+          await _apiService.deleteMessage(message.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Message deleted successfully')),
+          );
+          } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error deleting Message: $e')),
+              );
+      }
   }
 
   void _copyMessage(BuildContext context) {
@@ -92,9 +100,11 @@ class MessageBubble extends StatelessWidget {
   }
 
   void _forwardMessage(BuildContext context) {
-    // TODO: Implement message forwarding functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message forwarding will be implemented')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForwardMessageScreen(message: message),
+      ),
     );
   }
 

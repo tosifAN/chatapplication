@@ -56,4 +56,14 @@ class ApiService {
       throw Exception('Failed to get recent interacted users: ${response.body}');
     }
   }
+
+  Future<void> deleteMessage(String messageId) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/messages/$messageId'),
+      headers: getAuthHeaders(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete group: ${response.body}');
+    }
+  }
 }

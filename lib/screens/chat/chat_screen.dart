@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'package:chatapplication/screens/chat/messagebubble.dart';
-import 'package:chatapplication/screens/profile/profile_screen.dart';
+import 'package:chatapplication/screens/chat/mainui.dart';
 import 'package:chatapplication/services/api/directmessage.dart';
 import 'package:chatapplication/services/file/file_service.dart';
 import 'package:chatapplication/services/mqtt/mqtt_service.dart';
@@ -152,7 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    /*return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
@@ -261,6 +260,8 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+    */
+    return mainUI(context, widget, _isLoading, _messages, _scrollController, _currentUser, _isUploading, _messageController, _handleFileAttachment, _sendMessage);
   }
   
 Future<void> _handleFileAttachment() async {

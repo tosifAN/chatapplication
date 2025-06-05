@@ -1,22 +1,27 @@
 import 'package:chatapplication/screens/image/enhanced_image_view.dart';
 import 'package:chatapplication/screens/video/enhanced_video_view.dart';
+import 'package:chatapplication/services/api/api_service.dart';
 import 'package:chatapplication/util/time.dart';
 import 'package:flutter/material.dart';
 import 'package:chatapplication/models/message.dart';
 import 'package:chatapplication/models/user.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:chatapplication/screens/forward/forward_message_screen.dart';
 
 class GroupMessageBubble extends StatelessWidget {
   final Message message;
   final bool isMe;
   final User sender;
 
-  const GroupMessageBubble({super.key, 
+  GroupMessageBubble({super.key, 
     required this.message,
     required this.isMe,
     required this.sender,
   });
+
+  final ApiService _apiService = ApiService();
+
 
   @override
   Widget build(BuildContext context) {
@@ -124,12 +129,19 @@ class GroupMessageBubble extends StatelessWidget {
     );
   }
 
-  void _deleteMessage(BuildContext context) {
-    // TODO: Implement message deletion functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message deletion will be implemented')),
-    );
+    Future<void> _deleteMessage(BuildContext context) async {
+     try {
+          await _apiService.deleteMessage(message.id);
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Message deleted successfully')),
+          );
+          } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error deleting Message: $e')),
+              );
+      }
   }
+
 
   void _copyMessage(BuildContext context) {
     // Copy message content to clipboard
@@ -140,9 +152,11 @@ class GroupMessageBubble extends StatelessWidget {
   }
 
   void _forwardMessage(BuildContext context) {
-    // TODO: Implement message forwarding functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message forwarding will be implemented')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForwardMessageScreen(message: message),
+      ),
     );
   }
 

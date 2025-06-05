@@ -358,3 +358,42 @@ func (mc *MessageController) MarkMessagesAsRead(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"updated": result.RowsAffected})
 }
+
+// DeleteMessage deletes a message (only by  messsage creator)
+func (gc *MessageController) DeleteMessage(c *gin.Context) {
+	messageID := c.Param("id")
+	if messageID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Message ID is required"})
+		return
+	}
+
+	// Get the authenticated user ID from the context
+	authUserID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Check if the group exists
+	var message models.Message
+	result := gc.db.First(&message, "id = ?", messageID)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "message not found"})
+		return
+	}
+
+	// Only allow the creator/admin to delete the message
+	if message.SenderID != authUserID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only the message creator can delete the message"})
+		return
+	}
+
+	// Delete the messageID
+	result = gc.db.Delete(&message)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete message"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "message deleted successfully"})
+}
