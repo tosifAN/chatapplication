@@ -356,6 +356,7 @@ class MessageBubble extends StatelessWidget {
   }
 
   String _formatTimestamp(DateTime timestamp) {
+    print("timestam from chat ${timestamp}");
     final time = TimeOfDay.fromDateTime(timestamp);
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
     final period = time.period == DayPeriod.am ? 'AM' : 'PM';

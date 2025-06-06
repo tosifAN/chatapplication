@@ -377,7 +377,7 @@ class _GroupScreenState extends State<GroupScreen> {
                               lastSeen: DateTime.now(),
                             ),
                           );
-                          
+                          print("this is group message ${message.timestamp}");
                           return GroupMessageBubble(
                             message: message,
                             isMe: isMe,

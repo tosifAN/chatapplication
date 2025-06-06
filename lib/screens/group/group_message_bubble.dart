@@ -92,19 +92,23 @@ class GroupMessageBubble extends StatelessWidget {
                           bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
                         ),
                       ),
-                      child: _buildMessageContent(context),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            formatTime(message.timestamp),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isMe ? Colors.white70 : Colors.grey[600],
-                            ),
+                          _buildMessageContent(context),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _formatTime(message.timestamp),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isMe ? Colors.white70 : Colors.grey[600],
+                                ),
+                              ),
+                              // Optionally, add a read/delivered icon for group messages if you want
+                            ],
                           ),
                         ],
                       ),
@@ -375,5 +379,11 @@ class GroupMessageBubble extends StatelessWidget {
           ),
         );
     }
+  }
+  String _formatTime(DateTime timestamp) {
+    final time = TimeOfDay.fromDateTime(timestamp);
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '${hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} $period';
   }
 }
