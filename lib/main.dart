@@ -7,13 +7,8 @@ import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 
 void main() async {
-  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Load environment variables
-  // Use the correct path if .env is in lib/
   await dotenv.load(fileName: 'lib/.env');
-
   runApp(const MyApp());
 }
 
@@ -26,26 +21,63 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
-      child: MaterialApp( // Removed Consumer here
+      child: MaterialApp(
         title: 'Chat Application',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.light,
+          ),
           useMaterial3: true,
           appBarTheme: const AppBarTheme(
             centerTitle: true,
-            elevation: 0,
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
+            elevation: 2,
+            scrolledUnderElevation: 4,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black87,
+            shadowColor: Colors.black12,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              elevation: 2,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.blue, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+          cardTheme: CardTheme(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            clipBehavior: Clip.antiAlias,
           ),
         ),
-        // Use AuthWrapper to handle initial routing based on auth state
         home: const AuthWrapper(),
       ),
     );
   }
 }
 
-// New stateful widget to handle initial auth loading and routing
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -57,8 +89,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    // Call initAuth here in initState
-    // Use Future.microtask to avoid calling notifyListeners during the very first build frame
     Future.microtask(() {
       Provider.of<AuthProvider>(context, listen: false).initAuth();
     });
@@ -66,17 +96,28 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-
-    // Listen to AuthProvider state changes
     final authProvider = Provider.of<AuthProvider>(context);
 
-    // Show loading indicator while initializing
     if (authProvider.isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+              ],
+            ),
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
       );
     }
-    // Navigate based on authentication state
+
     return authProvider.isAuthenticated
         ? const HomeScreen()
         : const LoginScreen();
