@@ -1,5 +1,3 @@
-
-
 import 'package:chatapplication/screens/chat/messagebubble.dart';
 import 'package:chatapplication/screens/profile/profile_screen.dart';
 import 'package:flutter/material.dart';
@@ -7,26 +5,56 @@ import 'package:flutter/material.dart';
 Widget mainUI(BuildContext context, widget, _isLoading, _messages, _scrollController, _currentUser, _isUploading, _messageController, _handleFileAttachment, _sendMessage){
   return Scaffold(
       appBar: AppBar(
+        elevation: 2,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Row(
           children: [
-            CircleAvatar(
-              backgroundImage: widget.otherUser.avatarUrl != null
-                  ? NetworkImage(widget.otherUser.avatarUrl!)
-                  : null,
-              child: widget.otherUser.avatarUrl == null
-                  ? Text(widget.otherUser.username[0].toUpperCase())
-                  : null,
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: widget.otherUser.avatarUrl != null
+                      ? NetworkImage(widget.otherUser.avatarUrl!)
+                      : null,
+                  child: widget.otherUser.avatarUrl == null
+                      ? Text(widget.otherUser.username[0].toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold))
+                      : null,
+                ),
+                if (widget.otherUser.isOnline)
+                  Positioned(
+                    bottom: 2,
+                    right: 2,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.otherUser.username),
+                Text(widget.otherUser.username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 Text(
                   widget.otherUser.isOnline ? 'Online' : 'Offline',
                   style: TextStyle(
                     fontSize: 12,
                     color: widget.otherUser.isOnline ? Colors.green : Colors.grey,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -37,10 +65,9 @@ Widget mainUI(BuildContext context, widget, _isLoading, _messages, _scrollContro
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () {
-              // Show user profile or chat info
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => ProfileScreen(user: widget.otherUser, isCurrentUser : false)),
+                MaterialPageRoute(builder: (_) => ProfileScreen(user: widget.otherUser, isCurrentUser: false)),
               );
             },
           ),
@@ -69,15 +96,16 @@ Widget mainUI(BuildContext context, widget, _isLoading, _messages, _scrollContro
                       ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, -1),
+                  color: Colors.grey.withOpacity(0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -85,28 +113,48 @@ Widget mainUI(BuildContext context, widget, _isLoading, _messages, _scrollContro
               children: [
                 IconButton(
                   icon: const Icon(Icons.attach_file),
+                  color: Colors.blueAccent,
+                  tooltip: 'Attach file',
                   onPressed: _isUploading ? null : _handleFileAttachment,
                 ),
                 _isUploading
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                   : const SizedBox.shrink(),
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Type a message',
-                      border: InputBorder.none,
-                    ),
-                    textCapitalization: TextCapitalization.sentences,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: null,
-                    onSubmitted: (_) => _sendMessage(),
+                  child: Stack(
+                    alignment: Alignment.centerRight,
+                    children: [
+                      TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: 'Type a message',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+                        ),
+                        textCapitalization: TextCapitalization.sentences,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                      if (_messageController.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () => _messageController.clear(),
+                          splashRadius: 16,
+                        ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  color: Theme.of(context).primaryColor,
-                  onPressed: _sendMessage,
+                const SizedBox(width: 4),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
                 ),
               ],
             ),

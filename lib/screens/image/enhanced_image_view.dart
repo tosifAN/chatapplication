@@ -34,22 +34,32 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share),
+            icon: const Icon(Icons.share, size: 26),
             onPressed: _shareImage,
             tooltip: 'Share',
           ),
           IconButton(
-            icon: Icon(_isDownloaded ? Icons.download_done : Icons.download),
+            icon: Icon(_isDownloaded ? Icons.download_done : Icons.download, size: 26),
             onPressed: _isDownloading ? null : _downloadImage,
             tooltip: _isDownloaded ? 'Downloaded' : 'Download',
           ),
           if (widget.onDelete != null)
             IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.delete, size: 26),
               onPressed: () {
                 _confirmDelete(context);
               },
@@ -59,34 +69,54 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
       ),
       body: Center(
         child: _isImageLoaded
-            ? InteractiveViewer(
-                child: Image.network(widget.imageUrl),
+            ? Hero(
+                tag: widget.imageUrl,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.18),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: InteractiveViewer(
+                      child: Image.network(widget.imageUrl),
+                    ),
+                  ),
+                ),
               )
             : Stack(
                 alignment: Alignment.center,
                 children: [
-                  Image.network(
-                    widget.imageUrl,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) {
-                        _isImageLoaded = true;
-                        return child;
-                      }
-                      return const CircularProgressIndicator(color: Colors.white);
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.error, color: Colors.white, size: 48),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Failed to load image',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      );
-                    },
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.network(
+                      widget.imageUrl,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) {
+                          _isImageLoaded = true;
+                          return child;
+                        }
+                        return const CircularProgressIndicator(color: Colors.white);
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error, color: Colors.white, size: 48),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load image',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                   if (!_isImageLoaded)
                     const CircularProgressIndicator(color: Colors.white),

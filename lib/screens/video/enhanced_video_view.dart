@@ -85,22 +85,32 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share),
+            icon: const Icon(Icons.share, size: 26),
             onPressed: _shareVideo,
             tooltip: 'Share',
           ),
           IconButton(
-            icon: Icon(_isDownloaded ? Icons.download_done : Icons.download),
+            icon: Icon(_isDownloaded ? Icons.download_done : Icons.download, size: 26),
             onPressed: _isDownloading ? null : _downloadVideo,
             tooltip: _isDownloaded ? 'Downloaded' : 'Download',
           ),
           if (widget.onDelete != null)
             IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.delete, size: 26),
               onPressed: () {
                 _confirmDelete(context);
               },
@@ -110,7 +120,24 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
       ),
       body: Center(
         child: _isInitialized
-            ? Chewie(controller: _chewieController!)
+            ? Hero(
+                tag: widget.videoUrl,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.18),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Chewie(controller: _chewieController!),
+                  ),
+                ),
+              )
             : const CircularProgressIndicator(color: Colors.white),
       ),
     );

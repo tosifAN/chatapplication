@@ -49,9 +49,13 @@ void showAddUserDialog({
                 // Header
                 Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: const BorderRadius.only(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
                     ),
@@ -63,7 +67,7 @@ void showAddUserDialog({
                         'Add User to Group',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -214,21 +218,34 @@ void showAddUserDialog({
                                           final user = _addUserSearchResults[index];
                                           return ListTile(
                                             contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            leading: CircleAvatar(
-                                              radius: 24,
-                                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                                              backgroundImage: user.avatarUrl != null
-                                                  ? NetworkImage(user.avatarUrl!)
-                                                  : null,
-                                              child: user.avatarUrl == null
-                                                  ? Text(
-                                                      user.username[0].toUpperCase(),
-                                                      style: TextStyle(
-                                                        color: Theme.of(context).primaryColor,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    )
-                                                  : null,
+                                            leading: Container(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                border: Border.all(color: Colors.white, width: 2),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black.withOpacity(0.08),
+                                                    blurRadius: 6,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: CircleAvatar(
+                                                radius: 24,
+                                                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                                                backgroundImage: user.avatarUrl != null
+                                                    ? NetworkImage(user.avatarUrl!)
+                                                    : null,
+                                                child: user.avatarUrl == null
+                                                    ? Text(
+                                                        user.username[0].toUpperCase(),
+                                                        style: TextStyle(
+                                                          color: Theme.of(context).primaryColor,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      )
+                                                    : null,
+                                              ),
                                             ),
                                             title: Text(
                                               user.username,

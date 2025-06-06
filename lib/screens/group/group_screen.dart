@@ -251,17 +251,41 @@ class _GroupScreenState extends State<GroupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 2,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Row(
           children: [
-            CircleAvatar(
-              backgroundImage: widget.group.avatarUrl != null
-                  ? NetworkImage(widget.group.avatarUrl!)
-                  : null,
-              child: widget.group.avatarUrl == null
-                  ? Text(widget.group.name[0].toUpperCase())
-                  : null,
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 24,
+                backgroundImage: widget.group.avatarUrl != null
+                    ? NetworkImage(widget.group.avatarUrl!)
+                    : null,
+                child: widget.group.avatarUrl == null
+                    ? Text(widget.group.name[0].toUpperCase(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold))
+                    : null,
+              ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,10 +293,17 @@ class _GroupScreenState extends State<GroupScreen> {
                   Text(
                     widget.group.name,
                     overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
-                  Text(
-                    '${widget.group.memberIds.length} members',
-                    style: const TextStyle(fontSize: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.group, size: 14, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${widget.group.memberIds.length} members',
+                        style: const TextStyle(fontSize: 12, color: Colors.white70),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -317,7 +348,7 @@ class _GroupScreenState extends State<GroupScreen> {
                     );
                   }
                 },
-                onDeleteGroup: _showDeleteGroupDialog, // <-- Add this line
+                onDeleteGroup: _showDeleteGroupDialog,
               );
             },
           ),
@@ -356,15 +387,16 @@ class _GroupScreenState extends State<GroupScreen> {
                       ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, -1),
+                  color: Colors.grey.withOpacity(0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -372,28 +404,48 @@ class _GroupScreenState extends State<GroupScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.attach_file),
+                  color: Colors.blueAccent,
+                  tooltip: 'Attach file',
                   onPressed: _isUploading ? null : _handleFileAttachment,
                 ),
                 _isUploading
                   ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                   : const SizedBox.shrink(),
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Type a message',
-                      border: InputBorder.none,
-                    ),
-                    textCapitalization: TextCapitalization.sentences,
-                    keyboardType: TextInputType.multiline,
-                    maxLines: null,
-                    onSubmitted: (_) => _sendMessage(),
+                  child: Stack(
+                    alignment: Alignment.centerRight,
+                    children: [
+                      TextField(
+                        controller: _messageController,
+                        decoration: InputDecoration(
+                          hintText: 'Type a message',
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 0),
+                        ),
+                        textCapitalization: TextCapitalization.sentences,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                      if (_messageController.text.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () => _messageController.clear(),
+                          splashRadius: 16,
+                        ),
+                    ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  color: Theme.of(context).primaryColor,
-                  onPressed: _sendMessage,
+                const SizedBox(width: 4),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
                 ),
               ],
             ),

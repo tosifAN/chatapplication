@@ -68,42 +68,58 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Find Users'),
-        elevation: 0,
+        elevation: 2,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text('Find Users', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
       ),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by username or email',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+            child: Material(
+              elevation: 2,
+              borderRadius: BorderRadius.circular(14),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by username or email',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchResults = [];
+                            });
+                          },
+                        )
+                      : null,
                 ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchResults = [];
-                          });
-                        },
-                      )
-                    : null,
+                onChanged: (value) {
+                  if (value.length >= 3) {
+                    _searchUsers(value);
+                  } else if (value.isEmpty) {
+                    setState(() {
+                      _searchResults = [];
+                    });
+                  }
+                },
               ),
-              onChanged: (value) {
-                if (value.length >= 3) {
-                  _searchUsers(value);
-                } else if (value.isEmpty) {
-                  setState(() {
-                    _searchResults = [];
-                  });
-                }
-              },
             ),
           ),
           if (_errorMessage != null)
@@ -130,31 +146,60 @@ class _SearchScreenState extends State<SearchScreen> {
                         itemCount: _searchResults.length,
                         itemBuilder: (context, index) {
                           final user = _searchResults[index];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundImage: user.avatarUrl != null
-                                  ? NetworkImage(user.avatarUrl!)
-                                  : null,
-                              child: user.avatarUrl == null
-                                  ? Text(user.username[0].toUpperCase())
-                                  : null,
-                            ),
-                            title: Text(user.username),
-                            subtitle: Text(user.email),
-                            trailing: Text(
-                              user.isOnline ? 'Online' : 'Offline',
-                              style: TextStyle(
-                                color: user.isOnline ? Colors.green : Colors.grey,
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ChatScreen(otherUser: user),
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            elevation: 2,
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              leading: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
+                                child: CircleAvatar(
+                                  radius: 26,
+                                  backgroundImage: user.avatarUrl != null
+                                      ? NetworkImage(user.avatarUrl!)
+                                      : null,
+                                  child: user.avatarUrl == null
+                                      ? Text(user.username[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))
+                                      : null,
+                                ),
+                              ),
+                              title: Text(user.username, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              subtitle: Text(user.email, style: const TextStyle(color: Colors.black54)),
+                              trailing: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: user.isOnline ? Colors.green.withOpacity(0.08) : Colors.grey.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  user.isOnline ? 'Online' : 'Offline',
+                                  style: TextStyle(
+                                    color: user.isOnline ? Colors.green : Colors.grey,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ChatScreen(otherUser: user),
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         },
                       ),

@@ -42,17 +42,35 @@ void showGroupInfo({
               ),
               const SizedBox(height: 16),
               Center(
-                child: CircleAvatar(
-                  radius: 40,
-                  backgroundImage: group.avatarUrl != null
-                      ? NetworkImage(group.avatarUrl!)
-                      : null,
-                  child: group.avatarUrl == null
-                      ? Text(
-                          group.name[0].toUpperCase(),
-                          style: const TextStyle(fontSize: 30),
-                        )
-                      : null,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 44,
+                    backgroundImage: group.avatarUrl != null
+                        ? NetworkImage(group.avatarUrl!)
+                        : null,
+                    child: group.avatarUrl == null
+                        ? Text(
+                            group.name[0].toUpperCase(),
+                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                          )
+                        : null,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -71,7 +89,7 @@ void showGroupInfo({
                   child: Text(
                     group.description!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16, color: Colors.black54),
                   ),
                 ),
               ],
@@ -96,48 +114,57 @@ void showGroupInfo({
                     final isCurrentUser = member.id == currentUser.id;
                     final isAdmin = currentUser.id == group.creatorId;
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: member.avatarUrl != null
-                            ? NetworkImage(member.avatarUrl!)
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 1,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.blue[50],
+                          backgroundImage: member.avatarUrl != null
+                              ? NetworkImage(member.avatarUrl!)
+                              : null,
+                          child: member.avatarUrl == null
+                              ? Text(member.username[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold))
+                              : null,
+                        ),
+                        title: Row(
+                          children: [
+                            Text(member.username, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            if (isCurrentUser)
+                              const Text(' (You)', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.blue)),
+                          ],
+                        ),
+                        subtitle: isCreator
+                            ? const Text('Group Admin', style: TextStyle(color: Colors.blue))
                             : null,
-                        child: member.avatarUrl == null
-                            ? Text(member.username[0].toUpperCase())
-                            : null,
-                      ),
-                      title: Row(
-                        children: [
-                          Text(member.username),
-                          if (isCurrentUser)
-                            const Text(' (You)', style: TextStyle(fontStyle: FontStyle.italic)),
-                        ],
-                      ),
-                      subtitle: isCreator
-                          ? const Text('Group Admin', style: TextStyle(color: Colors.blue))
-                          : null,
-                      trailing: isCreator || !isCurrentUser
-                          ? (isAdmin && !isCurrentUser && !isCreator ? 
-                              IconButton(
-                                icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                        trailing: isCreator || !isCurrentUser
+                            ? (isAdmin && !isCurrentUser && !isCreator ? 
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                                  tooltip: 'Remove member',
+                                  onPressed: () {
+                                    _showRemoveMemberDialog(
+                                      context,
+                                      group,
+                                      member,
+                                      () async {
+                                        await onRemoveMember(member);
+                                        await onRefreshMembers();
+                                      },
+                                    );
+                                  },
+                                ) : null)
+                            : IconButton(
+                                icon: const Icon(Icons.exit_to_app),
+                                tooltip: 'Leave group',
                                 onPressed: () {
-                                  _showRemoveMemberDialog(
-                                    context,
-                                    group,
-                                    member,
-                                    () async {
-                                      await onRemoveMember(member); // <-- Use the new callback
-                                      await onRefreshMembers();
-                                    },
-                                  );
+                                  Navigator.pop(context);
+                                  onLeaveGroup();
                                 },
-                              ) : null)
-                          : IconButton(
-                              icon: const Icon(Icons.exit_to_app),
-                              onPressed: () {
-                                Navigator.pop(context);
-                                onLeaveGroup();
-                              },
-                            ),
+                              ),
+                      ),
                     );
                   },
                 ),
@@ -150,6 +177,9 @@ void showGroupInfo({
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       onPressed: () {
                         Navigator.pop(context);

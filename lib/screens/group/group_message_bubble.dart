@@ -31,58 +31,87 @@ class GroupMessageBubble extends StatelessWidget {
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isMe) ...[  
+          if (!isMe) ...[
             CircleAvatar(
-              radius: 16,
+              radius: 18,
               backgroundImage: sender.avatarUrl != null
                   ? NetworkImage(sender.avatarUrl!)
                   : null,
               child: sender.avatarUrl == null
-                  ? Text(sender.username[0].toUpperCase(), style: const TextStyle(fontSize: 12))
+                  ? Text(sender.username[0].toUpperCase(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))
                   : null,
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                if (!isMe)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4.0),
-                    child: Text(
-                      sender.username,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[700],
+            child: GestureDetector(
+              onLongPress: () => _showMessageOptions(context),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                child: Column(
+                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    if (!isMe)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4.0),
+                        child: Text(
+                          sender.username,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
+                      decoration: BoxDecoration(
+                        gradient: isMe
+                            ? const LinearGradient(
+                                colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : const LinearGradient(
+                                colors: [Color(0xFFE0E0E0), Color(0xFFF5F5F5)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.07),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(20),
+                          topRight: const Radius.circular(20),
+                          bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
+                          bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
+                        ),
+                      ),
+                      child: _buildMessageContent(context),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            formatTime(message.timestamp),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isMe ? Colors.white70 : Colors.grey[600],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                GestureDetector(
-                  onLongPress: () {
-                    _showMessageOptions(context);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                    decoration: BoxDecoration(
-                      color: isMe ? Colors.blue : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: _buildMessageContent(context),
-                  ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    formatTime(message.timestamp),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -90,43 +119,25 @@ class GroupMessageBubble extends StatelessWidget {
     );
   }
   
-  void _showMessageOptions(BuildContext context) {
-    showModalBottomSheet(
+  void _showMessageOptions(BuildContext context) async {
+    final selected = await showMenu<String>(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.copy),
-            title: const Text('Copy'),
-            onTap: () {
-              Navigator.pop(context);
-              _copyMessage(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.forward),
-            title: const Text('Forward'),
-            onTap: () {
-              Navigator.pop(context);
-              _forwardMessage(context);
-            },
-          ),
-          if (isMe)
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                _deleteMessage(context);
-              },
-            ),
-        ],
-      ),
+      position: RelativeRect.fromLTRB(100, 100, 100, 100), // You may want to improve this position logic
+      items: [
+        const PopupMenuItem(value: 'copy', child: ListTile(leading: Icon(Icons.copy), title: Text('Copy'))),
+        const PopupMenuItem(value: 'forward', child: ListTile(leading: Icon(Icons.forward), title: Text('Forward'))),
+        if (isMe)
+          const PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text('Delete', style: TextStyle(color: Colors.red))))
+      ],
     );
+
+    if (selected == 'copy') {
+      _copyMessage(context);
+    } else if (selected == 'forward') {
+      _forwardMessage(context);
+    } else if (selected == 'delete') {
+      _deleteMessage(context);
+    }
   }
 
     Future<void> _deleteMessage(BuildContext context) async {

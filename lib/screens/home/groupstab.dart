@@ -44,26 +44,60 @@ class GroupsTab extends StatelessWidget {
           itemCount: groups.length,
           itemBuilder: (context, index) {
             final group = groups[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: group.avatarUrl != null
-                    ? NetworkImage(group.avatarUrl!)
-                    : null,
-                child: group.avatarUrl == null
-                    ? Text(group.name[0].toUpperCase())
-                    : null,
-              ),
-              title: Text(group.name),
-              subtitle: Text(group.description ?? 'No description'),
-              trailing: Text('${group.memberIds.length} members'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => GroupScreen(group: group),
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 2,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                leading: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                );
-              },
+                  child: CircleAvatar(
+                    radius: 26,
+                    backgroundImage: group.avatarUrl != null
+                        ? NetworkImage(group.avatarUrl!)
+                        : null,
+                    child: group.avatarUrl == null
+                        ? Text(group.name[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))
+                        : null,
+                  ),
+                ),
+                title: Text(group.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                subtitle: Text(group.description ?? 'No description', style: const TextStyle(color: Colors.black54)),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blueAccent.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.group, size: 16, color: Colors.blueAccent),
+                      const SizedBox(width: 4),
+                      Text('${group.memberIds.length} members', style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.blueAccent)),
+                    ],
+                  ),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GroupScreen(group: group),
+                    ),
+                  );
+                },
+              ),
             );
           },
         );

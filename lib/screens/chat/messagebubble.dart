@@ -6,6 +6,7 @@ import '../../models/message.dart';
 import '../image/enhanced_image_view.dart';
 import '../video/enhanced_video_view.dart';
 import '../forward/forward_message_screen.dart';
+
 class MessageBubble extends StatelessWidget {
   final Message message;
   final bool isMe;
@@ -27,19 +28,66 @@ class MessageBubble extends StatelessWidget {
         children: [
           if (!isMe) const SizedBox(width: 8),
           GestureDetector(
-            onLongPress: () {
-              _showMessageOptions(context);
-            },
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7,
+            onLongPress: () => _showMessageOptions(context),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
+                decoration: BoxDecoration(
+                  gradient: isMe
+                      ? const LinearGradient(
+                          colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFFE0E0E0), Color(0xFFF5F5F5)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.07),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
+                    bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildMessageContent(context),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _formatTimestamp(message.timestamp),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isMe ? Colors.white70 : Colors.grey[600],
+                          ),
+                        ),
+                        if (isMe && message.isRead)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.check, size: 14, color: Colors.white70),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-              decoration: BoxDecoration(
-                color: isMe ? Theme.of(context).primaryColor : Colors.grey[300],
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: _buildMessageContent(context),
             ),
           ),
         ],
@@ -47,12 +95,12 @@ class MessageBubble extends StatelessWidget {
     );
   }
   
-  void _showMessageOptions(BuildContext context) {
+  void _showMessageOptions(BuildContext context) async {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final position = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
-    
-    showMenu(
+
+    final selected = await showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(
         position.dx,
@@ -61,21 +109,20 @@ class MessageBubble extends StatelessWidget {
         position.dy + size.height,
       ),
       items: [
-        PopupMenuItem(
-          child: const Text('Copy'),
-          onTap: () => _copyMessage(context),
-        ),
-        PopupMenuItem(
-          child: const Text('Forward'),
-          onTap: () => _forwardMessage(context),
-        ),
+        const PopupMenuItem(value: 'copy', child: Text('Copy')),
+        const PopupMenuItem(value: 'forward', child: Text('Forward')),
         if (isMe)
-          PopupMenuItem(
-            child: const Text('Delete'),
-            onTap: () => _deleteMessage(context),
-          ),
+          const PopupMenuItem(value: 'delete', child: Text('Delete')),
       ],
     );
+
+    if (selected == 'copy') {
+      _copyMessage(context);
+    } else if (selected == 'forward') {
+      _forwardMessage(context);
+    } else if (selected == 'delete') {
+      _deleteMessage(context);
+    }
   }
 
   Future<void> _deleteMessage(BuildContext context) async {
@@ -306,5 +353,12 @@ class MessageBubble extends StatelessWidget {
           ),
         );
     }
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final time = TimeOfDay.fromDateTime(timestamp);
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '${hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')} $period';
   }
 }

@@ -63,10 +63,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat App'),
+        elevation: 2,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text('Chat App', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
+            tooltip: 'Search',
             onPressed: () {
               Navigator.push(
                 context,
@@ -76,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           IconButton(
             icon: const Icon(Icons.account_circle),
+            tooltip: 'Profile',
             onPressed: () {
               Navigator.push(
                 context,
@@ -103,6 +115,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ],
         bottom: TabBar(
           controller: _tabController,
+          indicator: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            color: Color(0x332196F3),
+          ),
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           tabs: const [
             Tab(text: 'Chats'),
             Tab(text: 'Groups'),
@@ -118,20 +135,31 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           GroupsTab(userId: user.id),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (_currentIndex == 0) {
-            // Create new chat
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SearchScreen()),
-            );
-          } else {
-            // Create new group
-            _showCreateGroupDialog(context, user.id);
-          }
-        },
-        child: Icon(_currentIndex == 0 ? Icons.chat : Icons.group_add),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blueAccent.withOpacity(0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: FloatingActionButton(
+          onPressed: () {
+            if (_currentIndex == 0) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            } else {
+              _showCreateGroupDialog(context, user.id);
+            }
+          },
+          backgroundColor: Colors.blueAccent,
+          child: Icon(_currentIndex == 0 ? Icons.chat : Icons.group_add, color: Colors.white),
+        ),
       ),
     );
   }
@@ -143,51 +171,71 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create New Group'),
-        content: Column(
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Group Name',
-                border: OutlineInputBorder(),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: const Text('Create New Group', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Group Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (Optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (Optional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final name = nameController.text.trim();
+                    final description = descriptionController.text.trim();
+                    if (name.isEmpty) return;
+                    await _apiGroupMessageService.createGroup(name, description, [userId]);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Create'),
+                ),
+              ],
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final name = nameController.text.trim();
-              final description = descriptionController.text.trim();
-              
-              if (name.isEmpty) return;
-
-              await _apiGroupMessageService.createGroup(name, description, [userId]);
-              
-              Navigator.pop(context);
-
-              // Create group and navigate to group screen
-              // This will be implemented with the group provider
-            },
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
