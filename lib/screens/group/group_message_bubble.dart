@@ -1,7 +1,7 @@
 import 'package:chatapplication/screens/image/enhanced_image_view.dart';
 import 'package:chatapplication/screens/video/enhanced_video_view.dart';
+import 'package:chatapplication/services/cache/media_cache_service.dart';
 import 'package:chatapplication/services/api/api_service.dart';
-import 'package:chatapplication/util/time.dart';
 import 'package:flutter/material.dart';
 import 'package:chatapplication/models/message.dart';
 import 'package:chatapplication/models/user.dart';
@@ -21,7 +21,7 @@ class GroupMessageBubble extends StatelessWidget {
   });
 
   final ApiService _apiService = ApiService();
-
+  final MediaCacheService _mediaCacheService = MediaCacheService();
 
   @override
   Widget build(BuildContext context) {
@@ -197,23 +197,20 @@ class GroupMessageBubble extends StatelessWidget {
               },
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  message.content,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
+                child: _mediaCacheService.getImageThumbnail(
+                  imageUrl: message.content,
+                  width: 200,
+                  height: 150,
+                  placeholder: (context, child, loadingProgress) {
                     return Container(
                       width: 200,
                       height: 150,
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
                       ),
                     );
                   },
-                  errorBuilder: (context, error, stackTrace) {
+                  errorWidget: (context, url, error) {
                     return Container(
                       width: 200,
                       height: 150,
@@ -246,36 +243,10 @@ class GroupMessageBubble extends StatelessWidget {
                   ),
                 );
               },
-              child: Container(
+              child: _mediaCacheService.getVideoThumbnail(
+                videoUrl: message.content,
                 width: 200,
                 height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const Icon(
-                      Icons.play_circle_fill,
-                      color: Colors.white,
-                      size: 50,
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        color: Colors.black54,
-                        child: Text(
-                          'Video',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ],
@@ -285,25 +256,10 @@ class GroupMessageBubble extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.picture_as_pdf,
-                  color: isMe ? Colors.white : Colors.red,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    fileName,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            _mediaCacheService.getPdfThumbnail(
+              pdfUrl: message.content,
+              fileName: fileName,
+              isMe: isMe,
             ),
             const SizedBox(height: 4),
             GestureDetector(
@@ -314,7 +270,6 @@ class GroupMessageBubble extends StatelessWidget {
                   await launchUrl(url);
                 }
               },
-
               child: Text(
                 'Open PDF',
                 style: TextStyle(
@@ -331,25 +286,10 @@ class GroupMessageBubble extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.insert_drive_file,
-                  color: isMe ? Colors.white : Colors.black87,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    fileName,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            _mediaCacheService.getFileThumbnail(
+              fileUrl: message.content,
+              fileName: fileName,
+              isMe: isMe,
             ),
             const SizedBox(height: 4),
             GestureDetector(

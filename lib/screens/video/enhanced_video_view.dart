@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import 'package:chatapplication/services/cache/media_cache_service.dart';
 
 class EnhancedVideoView extends StatefulWidget {
   final String videoUrl;
@@ -32,6 +33,7 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
   bool _isDownloading = false;
   bool _isDownloaded = false;
   String? _localPath;
+  final MediaCacheService _mediaCacheService = MediaCacheService();
 
   @override
   void initState() {
@@ -40,8 +42,20 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
   }
 
   Future<void> _initializePlayer() async {
-    _videoPlayerController = VideoPlayerController.network(widget.videoUrl);
-    await _videoPlayerController.initialize();
+    try {
+      // Get the file from cache or download it
+      final file = await _mediaCacheService.getFileFromCache(widget.videoUrl);
+      _videoPlayerController = VideoPlayerController.file(file);
+      await _videoPlayerController.initialize();
+      
+      // Mark as downloaded since we have it in cache
+      _isDownloaded = true;
+      _localPath = file.path;
+    } catch (e) {
+      // Fallback to network if cache fails
+      _videoPlayerController = VideoPlayerController.network(widget.videoUrl);
+      await _videoPlayerController.initialize();
+    }
     
     _chewieController = ChewieController(
       videoPlayerController: _videoPlayerController,
@@ -151,20 +165,17 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
         return;
       }
 
-      // Otherwise download and share
       setState(() {
         _isDownloading = true;
       });
 
-      // Download the video
-      final response = await http.get(Uri.parse(widget.videoUrl));
-      final tempDir = await getTemporaryDirectory();
-      final fileName = widget.videoUrl.split('/').last;
-      final file = File('${tempDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes);
-
+      // Get the file from cache or download it
+      final file = await _mediaCacheService.getFileFromCache(widget.videoUrl);
+      
       setState(() {
         _isDownloading = false;
+        _isDownloaded = true;
+        _localPath = file.path;
       });
 
       // Share the file
@@ -194,13 +205,14 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
         _isDownloading = true;
       });
 
-      // Download the video
-      final response = await http.get(Uri.parse(widget.videoUrl));
+      // Get the file from cache or download it
+      final cachedFile = await _mediaCacheService.getFileFromCache(widget.videoUrl);
+      
+      // Copy to external storage for user access
       final directory = await getExternalStorageDirectory();
       final fileName = 'chat_app_${DateTime.now().millisecondsSinceEpoch}.mp4';
       final filePath = '${directory!.path}/$fileName';
-      final file = File(filePath);
-      await file.writeAsBytes(response.bodyBytes);
+      final file = await cachedFile.copy(filePath);
 
       setState(() {
         _isDownloading = false;

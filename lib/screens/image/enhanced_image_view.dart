@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:chatapplication/services/cache/media_cache_service.dart';
 
 class EnhancedImageView extends StatefulWidget {
   final String imageUrl;
@@ -28,6 +29,7 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
   bool _isDownloading = false;
   bool _isDownloaded = false;
   String? _localPath;
+  final MediaCacheService _mediaCacheService = MediaCacheService();
 
   @override
   Widget build(BuildContext context) {
@@ -69,58 +71,64 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
       ),
       body: Center(
         child: _isImageLoaded
-            ? Hero(
-                tag: widget.imageUrl,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.18),
-                          blurRadius: 24,
-                          offset: const Offset(0, 8),
+            ? FutureBuilder<File>(
+                future: _mediaCacheService.getFileFromCache(widget.imageUrl),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done && 
+                      snapshot.hasData) {
+                    return Hero(
+                      tag: widget.imageUrl,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.18),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: InteractiveViewer(
+                            child: Image.file(snapshot.data!),
+                          ),
+                        ),
+                      ),
+                    );
+                  } else {
+                    return const CircularProgressIndicator(color: Colors.white);
+                  }
+                },
+              )
+            : FutureBuilder<File>(
+                future: _mediaCacheService.getFileFromCache(widget.imageUrl),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done && 
+                      snapshot.hasData) {
+                    _isImageLoaded = true;
+                    _isDownloaded = true;
+                    _localPath = snapshot.data!.path;
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.file(snapshot.data!),
+                    );
+                  } else if (snapshot.hasError) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.error, color: Colors.white, size: 48),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Failed to load image: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ],
-                    ),
-                    child: InteractiveViewer(
-                      child: Image.network(widget.imageUrl),
-                    ),
-                  ),
-                ),
-              )
-            : Stack(
-                alignment: Alignment.center,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Image.network(
-                      widget.imageUrl,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) {
-                          _isImageLoaded = true;
-                          return child;
-                        }
-                        return const CircularProgressIndicator(color: Colors.white);
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.error, color: Colors.white, size: 48),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Failed to load image',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  if (!_isImageLoaded)
-                    const CircularProgressIndicator(color: Colors.white),
-                ],
+                    );
+                  } else {
+                    return const CircularProgressIndicator(color: Colors.white);
+                  }
+                },
               ),
       ),
     );
@@ -134,20 +142,17 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
         return;
       }
 
-      // Otherwise download and share
       setState(() {
         _isDownloading = true;
       });
 
-      // Download the image
-      final response = await http.get(Uri.parse(widget.imageUrl));
-      final tempDir = await getTemporaryDirectory();
-      final fileName = widget.imageUrl.split('/').last;
-      final file = File('${tempDir.path}/$fileName');
-      await file.writeAsBytes(response.bodyBytes);
-
+      // Get the file from cache or download it
+      final file = await _mediaCacheService.getFileFromCache(widget.imageUrl);
+      
       setState(() {
         _isDownloading = false;
+        _isDownloaded = true;
+        _localPath = file.path;
       });
 
       // Share the file
@@ -177,13 +182,14 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
         _isDownloading = true;
       });
 
-      // Download the image
-      final response = await http.get(Uri.parse(widget.imageUrl));
+      // Get the file from cache or download it
+      final cachedFile = await _mediaCacheService.getFileFromCache(widget.imageUrl);
+      
+      // Copy to external storage for user access
       final directory = await getExternalStorageDirectory();
       final fileName = 'chat_app_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final filePath = '${directory!.path}/$fileName';
-      final file = File(filePath);
-      await file.writeAsBytes(response.bodyBytes);
+      final file = await cachedFile.copy(filePath);
 
       setState(() {
         _isDownloading = false;

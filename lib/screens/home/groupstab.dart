@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../models/group.dart';
 import '../group/group_screen.dart';
 
-
 class GroupsTab extends StatelessWidget {
 
   final String userId;
@@ -12,10 +11,8 @@ class GroupsTab extends StatelessWidget {
 
   final ApiGroupMessageService _apiGroupMessageService = ApiGroupMessageService();
 
-
   @override
   Widget build(BuildContext context) {
-    // This will be replaced with actual data from a group provider
     return FutureBuilder<List<Group>>(
       future: _apiGroupMessageService.getUserGroups(userId), // Replace with actual API call
       builder: (context, snapshot) {
@@ -29,8 +26,6 @@ class GroupsTab extends StatelessWidget {
         
         final groups = snapshot.data ?? [];
 
-        print("this could be number of users : ${groups[0].memberIds}");
-        
         if (groups.isEmpty) {
           return const Center(
             child: Text(
@@ -39,6 +34,8 @@ class GroupsTab extends StatelessWidget {
             ),
           );
         }
+
+        print("this could be number of users : ${groups[0].memberIds}");
         
         return ListView.builder(
           itemCount: groups.length,
