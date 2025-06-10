@@ -6,6 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloudflare_r2/cloudflare_r2.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
 class FileService {
   // Singleton pattern
@@ -90,6 +91,11 @@ class FileService {
   Future<String?> uploadFile(File file, BuildContext context) async {
     try {
       // Get file information
+      bool result = await InternetConnection().hasInternetAccess;
+      if (!result){
+        print("No Internet Connection! Please connect with internet");
+        return "noInternet";
+      }
       final String fileExtension = path.extension(file.path);
       final String fileName = '${const Uuid().v4()}$fileExtension';
       

@@ -1,12 +1,30 @@
-class User {
-  final String id;
-  final String username;
-  final String email;
-  final String? avatarUrl;
-  final DateTime lastSeen;
-  final bool isOnline;
+import 'package:hive/hive.dart';
 
-  User({
+part 'user.g.dart';
+
+@HiveType(typeId: 0)
+class User extends HiveObject {
+  @HiveField(0)
+  late String id;
+  
+  @HiveField(1)
+  late String username;
+  
+  @HiveField(2)
+  late String email;
+  
+  @HiveField(3)
+  String? avatarUrl;
+  
+  @HiveField(4)
+  late DateTime lastSeen;
+  
+  @HiveField(5, defaultValue: false)
+  late bool isOnline;
+
+  User();
+  
+  User.create({
     required this.id,
     required this.username,
     required this.email,
@@ -16,7 +34,7 @@ class User {
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
-    return User(
+    return User.create(
       id: json['id'],
       username: json['username'],
       email: json['email'],

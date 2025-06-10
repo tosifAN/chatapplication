@@ -1,25 +1,53 @@
 import 'package:uuid/uuid.dart';
+import 'package:hive/hive.dart';
 
+part 'message.g.dart';
+
+@HiveType(typeId: 1)
 enum MessageType {
+  @HiveField(0)
   text,
+  @HiveField(1)
   image,
+  @HiveField(2)
   video,
+  @HiveField(3)
   pdf,
+  @HiveField(4)
   file,
+  @HiveField(5)
   system
 }
 
-class Message {
-  final String id;
-  final String senderId;
-  final String? receiverId; // For direct messages
-  final String? groupId;    // For group messages
-  final String content;
-  final DateTime timestamp;
-  final bool isRead;
-  final MessageType type;
+@HiveType(typeId: 2)
+class Message extends HiveObject {
+  @HiveField(0)
+  late String id;
+  
+  @HiveField(1)
+  late String senderId;
+  
+  @HiveField(2)
+  String? receiverId; // For direct messages
+  
+  @HiveField(3)
+  String? groupId;    // For group messages
+  
+  @HiveField(4)
+  late String content;
+  
+  @HiveField(5)
+  late DateTime timestamp;
+  
+  @HiveField(6, defaultValue: false)
+  late bool isRead;
+  
+  @HiveField(7)
+  late MessageType type;
 
-  Message({
+  Message();
+  
+  Message.create({
     String? id,
     required this.senderId,
     this.receiverId,
@@ -28,12 +56,13 @@ class Message {
     DateTime? timestamp,
     this.isRead = false,
     this.type = MessageType.text,
-  }) : 
-    this.id = id ?? const Uuid().v4(),
+  }) {
+    this.id = id ?? const Uuid().v4();
     this.timestamp = timestamp ?? DateTime.now();
+  }
 
   factory Message.fromJson(Map<String, dynamic> json) {
-    return Message(
+    return Message.create(
       id: json['id'],
       senderId: json['sender_id'],
       receiverId: json['receiver_id'],
@@ -71,7 +100,7 @@ class Message {
     bool? isRead,
     MessageType? type,
   }) {
-    return Message(
+    return Message.create(
       id: id ?? this.id,
       senderId: senderId ?? this.senderId,
       receiverId: receiverId ?? this.receiverId,

@@ -143,7 +143,7 @@ class _GroupScreenState extends State<GroupScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    final message = Message(
+    final message = Message.create(
       senderId: _currentUser.id,
       groupId: widget.group.id,
       content: text,
@@ -370,7 +370,7 @@ class _GroupScreenState extends State<GroupScreen> {
                           final isMe = message.senderId == _currentUser.id;
                           final sender = _members.firstWhere(
                             (member) => member.id == message.senderId,
-                            orElse: () => User(
+                            orElse: () => User.create(
                               id: message.senderId,
                               username: 'Unknown',
                               email: '',
@@ -479,7 +479,7 @@ class _GroupScreenState extends State<GroupScreen> {
         }
         
         // Create a file message
-        final message = Message(
+        final message = Message.create(
           senderId: _currentUser.id,
           groupId: widget.group.id,
           content: fileUrl,

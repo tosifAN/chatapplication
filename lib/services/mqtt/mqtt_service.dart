@@ -5,6 +5,7 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../models/message.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
 class MQTTService {
   MqttServerClient? _client;
@@ -27,6 +28,11 @@ class MQTTService {
   MQTTService._internal();
   
   Future<bool> connect(String userId) async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      print("No Internet Connection! Please connect with internet");
+      return false;
+    }
     if (_isConnected) return true;
     
     _currentUserId = userId;
@@ -119,6 +125,11 @@ class MQTTService {
   }
   
   Future<bool> subscribeToGroup(String groupId) async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      print("No Internet Connection! Please connect with internet");
+      return false;
+    }
     if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
       _client!.subscribe('chat/group/$groupId', MqttQos.atLeastOnce);
       return true;
@@ -127,6 +138,11 @@ class MQTTService {
   }
   
   Future<bool> unsubscribeFromGroup(String groupId) async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      print("No Internet Connection! Please connect with internet");
+      return false;
+    }
     if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
       _client!.unsubscribe('chat/group/$groupId');
       return true;
@@ -135,6 +151,11 @@ class MQTTService {
   }
   
   Future<bool> sendMessage(Message message) async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      print("No Internet Connection! Please connect with internet");
+      return false;
+    }
     if (_client?.connectionStatus?.state != MqttConnectionState.connected) {
       return false;
     }
@@ -161,14 +182,24 @@ class MQTTService {
     return true;
   }
   
-  void disconnect() {
+  Future<void> disconnect() async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      print("No Internet Connection! Please connect with internet");
+      return ;
+    }
     if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
       _client!.disconnect();
     }
     _isConnected = false;
   }
   
-  void dispose() {
+  Future<void> dispose() async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      print("No Internet Connection! Please connect with internet");
+      return ;
+    }
     disconnect();
     _messageController.close();
   }

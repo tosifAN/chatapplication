@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'token.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 
 class ApiAuthService {
   final String baseUrl;

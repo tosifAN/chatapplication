@@ -124,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    final message = Message(
+    final message = Message.create(
       senderId: _currentUser.id,
       receiverId: widget.otherUser.id,
       content: text,
@@ -288,7 +288,7 @@ Future<void> _handleFileAttachment() async {
         }
         
         // Create a file message
-        final message = Message(
+        final message = Message.create(
           senderId: _currentUser.id,
           receiverId: widget.otherUser.id,
           content: fileUrl,

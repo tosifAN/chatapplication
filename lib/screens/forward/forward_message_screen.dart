@@ -76,7 +76,7 @@ class _ForwardMessageScreenState extends State<ForwardMessageScreen> {
 
     try {
       // Create a new message with the same content but new recipient
-      final forwardedMessage = Message(
+      final forwardedMessage = Message.create(
         senderId: _currentUser.id,
         receiverId: recipient.id,
         content: widget.message.content,

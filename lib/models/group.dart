@@ -1,16 +1,35 @@
 import 'package:uuid/uuid.dart';
-import 'user.dart'; // Make sure this import exists
+import 'package:hive/hive.dart';
+import 'user.dart';
 
-class GroupMember {
-  final String groupId;
-  final String userId;
-  final DateTime joinedAt;
-  final bool isAdmin;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final User? user;
+part 'group.g.dart';
 
-  GroupMember({
+@HiveType(typeId: 3)
+class GroupMember extends HiveObject {
+  @HiveField(0)
+  late String groupId;
+  
+  @HiveField(1)
+  late String userId;
+  
+  @HiveField(2)
+  late DateTime joinedAt;
+  
+  @HiveField(3)
+  late bool isAdmin;
+  
+  @HiveField(4)
+  late DateTime createdAt;
+  
+  @HiveField(5)
+  late DateTime updatedAt;
+  
+  @HiveField(6)
+  User? user;
+
+  GroupMember();
+  
+  GroupMember.create({
     required this.groupId,
     required this.userId,
     required this.joinedAt,
@@ -21,7 +40,7 @@ class GroupMember {
   });
 
   factory GroupMember.fromJson(Map<String, dynamic> json) {
-    return GroupMember(
+    return GroupMember.create(
       groupId: json['group_id'],
       userId: json['user_id'],
       joinedAt: DateTime.parse(json['joined_at']),
@@ -33,36 +52,61 @@ class GroupMember {
   }
 }
 
-class Group {
-  final String id;
-  final String name;
-  final String? description;
-  final String? avatarUrl;
-  final String creatorId;
-  final List<String> memberIds;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
+@HiveType(typeId: 4)
+class Group extends HiveObject {
+  @HiveField(0)
+  late String id;
+  
+  @HiveField(1)
+  late String name;
+  
+  @HiveField(2)
+  String? description;
+  
+  @HiveField(3)
+  String? avatarUrl;
+  
+  @HiveField(4)
+  late String creatorId;
+  
+  @HiveField(5)
+  late List<String> memberIds;
+  
+  @HiveField(6)
+  late DateTime createdAt;
+  
+  @HiveField(7)
+  DateTime? updatedAt;
+  
+  @HiveField(8)
+  User? creator;
+  
+  @HiveField(9)
+  List<GroupMember>? members;
 
-  // Add these fields:
-  final User? creator;
-  final List<GroupMember>? members;
-
-  Group({
+  Group();
+  
+  Group.create({
     String? id,
-    required this.name,
+    required String name,
     this.description,
     this.avatarUrl,
-    required this.creatorId,
-    required this.memberIds,
+    required String creatorId,
+    required List<String> memberIds,
     DateTime? createdAt,
     this.updatedAt,
     this.creator,
     this.members,
-  })  : id = id ?? const Uuid().v4(),
-        createdAt = createdAt ?? DateTime.now();
+  }) {
+    this.id = id ?? const Uuid().v4();
+    this.name = name;
+    this.creatorId = creatorId;
+    this.memberIds = memberIds;
+    this.createdAt = createdAt ?? DateTime.now();
+  }
 
   factory Group.fromJson(Map<String, dynamic> json) {
-    return Group(
+    return Group.create(
       id: json['id'],
       name: json['name'],
       description: json['description'],
@@ -103,7 +147,7 @@ class Group {
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
-    return Group(
+    return Group.create(
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
@@ -113,15 +157,5 @@ class Group {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
-  }
-
-  Group addMember(String userId) {
-    if (memberIds.contains(userId)) return this;
-    return copyWith(memberIds: [...memberIds, userId]);
-  }
-
-  Group removeMember(String userId) {
-    if (!memberIds.contains(userId)) return this;
-    return copyWith(memberIds: memberIds.where((id) => id != userId).toList());
   }
 }

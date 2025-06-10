@@ -1,14 +1,53 @@
-import 'package:chatapplication/testing.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/user.dart';
+import 'models/message.dart';
+import 'models/group.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Load environment variables
   await dotenv.load(fileName: 'lib/.env');
+  
+  // Initialize Hive
+  await Hive.initFlutter();
+  
+  // Register adapters
+  if (!Hive.isAdapterRegistered(0)) {
+    Hive.registerAdapter(UserAdapter());
+  }
+  if (!Hive.isAdapterRegistered(1)) {
+    Hive.registerAdapter(MessageTypeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(2)) {
+    Hive.registerAdapter(MessageAdapter());
+  }
+  if (!Hive.isAdapterRegistered(3)) {
+    Hive.registerAdapter(GroupMemberAdapter());
+  }
+  if (!Hive.isAdapterRegistered(4)) {
+    Hive.registerAdapter(GroupAdapter());
+  }
+  
+  // Open the necessary boxes
+  await Future.wait([
+    Hive.openBox<User>('users'),
+    Hive.openBox<Message>('messages'),
+    Hive.openBox<Group>('groups'),
+    Hive.openBox<Map>('chat_cache'),
+    Hive.openBox<Map>('group_chat_cache'),
+    Hive.openBox<Map>('search_cache'),
+    Hive.openBox<Map>('recent_chats_cache'),
+    Hive.openBox<Map>('user_groups_cache'),
+    Hive.openBox<Map>('group_details_cache')
+  ]);
+  
   runApp(const MyApp());
 }
 
