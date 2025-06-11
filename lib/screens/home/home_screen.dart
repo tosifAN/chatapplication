@@ -2,6 +2,7 @@ import 'package:chatapplication/screens/home/chatstab.dart';
 import 'package:chatapplication/screens/home/groupstab.dart';
 import 'package:chatapplication/services/api/groupmessage.dart';
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../search/search_screen.dart';
@@ -227,6 +228,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     final name = nameController.text.trim();
                     final description = descriptionController.text.trim();
                     if (name.isEmpty) return;
+                    bool result = await InternetConnection().hasInternetAccess;
+                    if (!result){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                       SnackBar(content: Text('No Internet! Connect with Internet First')),
+                    );
+                    }
                     await _apiGroupMessageService.createGroup(name, description, [userId]);
                     Navigator.pop(context);
                   },

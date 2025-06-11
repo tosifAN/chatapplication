@@ -70,6 +70,9 @@ dependencies:
   
   # Media handling
   video_player: ^2.9.5
+  video_compress: ^3.1.4
+  flutter_image_compress: ^2.4.0
+  image_picker: ^1.1.2
   chewie: ^1.11.3
   
   # Sharing
@@ -79,9 +82,6 @@ dependencies:
   permission_handler: ^12.0.0+1
   
   # Network and caching
-  dio: ^5.8.0+1
-  dio_cache_interceptor: ^4.0.3
-  http_cache_hive_store: ^5.0.1
   connectivity_plus: ^6.1.4
   internet_connection_checker_plus: ^2.7.2
   flutter_cache_manager: 3.4.1

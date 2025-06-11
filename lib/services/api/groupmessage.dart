@@ -32,8 +32,9 @@ class ApiGroupMessageService {
     final cacheKeyWithPagination = isFirstPage ? cacheKey : '${cacheKey}_${offset}_$limit';
     
     // Check if we have cached results for this group chat and pagination
+    dynamic cachedResult;
     if (isFirstPage) {
-      final cachedResult = groupCacheBox.get(cacheKey);
+      cachedResult = groupCacheBox.get(cacheKey);
       if (cachedResult != null) {
         final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
         final timestamp = cachedResult['timestamp'] as int? ?? 0;
@@ -53,34 +54,80 @@ class ApiGroupMessageService {
       }
     }
     
-    // If no valid cache, fetch from API
-    final response = await http.get(
-      Uri.parse('$baseUrl/messages/group/$groupId?limit=$limit&offset=$offset'),
-      headers: getAuthHeaders(),
-    );
+    // Check internet connectivity
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (!hasInternet) {
+      // If we have any cache (even if expired), return it with empty list as fallback
+      if (cachedResult != null) {
+        final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
+        final cachedMessages = messageIds
+            .map((id) => messageBox.get(id))
+            .whereType<Message>()
+            .toList();
+        if (cachedMessages.isNotEmpty) {
+          return cachedMessages;
+        }
+      }
+      // If no cache is available, return empty list instead of throwing
+      return [];
+    }
     
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      final messages = data.map((json) => Message.fromJson(json)).toList();
+    try {
+      // If we're online, fetch from API
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/group/$groupId?limit=$limit&offset=$offset'),
+        headers: getAuthHeaders(),
+      ).timeout(const Duration(seconds: 10));
       
-      // Store messages and collect their IDs
-      final messageIds = <String>[];
-      for (final message in messages) {
-        await messageBox.put(message.id, message);
-        messageIds.add(message.id);
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        final messages = data.map((json) => Message.fromJson(json)).toList();
+        
+        // Store messages and collect their IDs
+        final messageIds = <String>[];
+        for (final message in messages) {
+          await messageBox.put(message.id, message);
+          messageIds.add(message.id);
+        }
+        
+        // Save the group chat messages with a timestamp
+        if (isFirstPage) {
+          await groupCacheBox.put(cacheKey, {
+            'messageIds': messageIds,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          });
+        }
+        
+        return messages;
+      } else {
+        // If API fails but we have cached data, return that
+        if (cachedResult != null) {
+          final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
+          final cachedMessages = messageIds
+              .map((id) => messageBox.get(id))
+              .whereType<Message>()
+              .toList();
+          if (cachedMessages.isNotEmpty) {
+            return cachedMessages;
+          }
+        }
+        // If no cache is available, return empty list instead of throwing
+        return [];
       }
-      
-      // Save the group chat messages with a timestamp (30 seconds cache for first page)
-      if (isFirstPage) {
-        await groupCacheBox.put(cacheKey, {
-          'messageIds': messageIds,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-        });
+    } catch (e) {
+      // For any error, try to return cached data if available
+      if (cachedResult != null) {
+        final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
+        final cachedMessages = messageIds
+            .map((id) => messageBox.get(id))
+            .whereType<Message>()
+            .toList();
+        if (cachedMessages.isNotEmpty) {
+          return cachedMessages;
+        }
       }
-      
-      return messages;
-    } else {
-      throw Exception('Failed to get group messages: ${response.body}');
+      // If no cache is available, return empty list
+      return [];
     }
   }
   
@@ -154,38 +201,87 @@ class ApiGroupMessageService {
       }
     }
     
-    // If no valid cache, fetch from API
-    final response = await http.get(
-      Uri.parse('$baseUrl/users/$userId/groups'),
-      headers: getAuthHeaders(),
-    );
-    
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      print('Fetched groups from API for user $userId: $data');
-      
-      // Process and store groups
-      final groups = <Group>[];
-      final groupIds = <String>[];
-      
-      for (final json in data) {
-        final group = Group.fromJson(json);
-        groups.add(group);
-        groupIds.add(group.id);
-        
-        // Store group in the groups box
-        await groupBox.put(group.id, group);
+    // Check internet connectivity
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (!hasInternet) {
+      // If we have any cache (even if expired), return it with empty list as fallback
+      if (cachedResult != null) {
+        final groupIds = List<String>.from(cachedResult['groupIds'] ?? []);
+        final cachedGroups = groupIds
+            .map((id) => groupBox.get(id))
+            .whereType<Group>()
+            .toList();
+        if (cachedGroups.isNotEmpty) {
+          print('Offline: Returning cached groups for user $userId');
+          return cachedGroups;
+        }
       }
+      // If no cache is available, return empty list instead of throwing
+      return [];
+    }
+    
+    try {
+      // If we're online, fetch from API
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/$userId/groups'),
+        headers: getAuthHeaders(),
+      ).timeout(const Duration(seconds: 10));
       
-      // Update the cache with the new data
-      await userGroupsCache.put(cacheKey, {
-        'groupIds': groupIds,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-      
-      return groups;
-    } else {
-      throw Exception('Failed to get user groups: ${response.body}');
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        print('Fetched groups from API for user $userId: $data');
+        
+        // Process and store groups
+        final groups = <Group>[];
+        final groupIds = <String>[];
+        
+        for (final json in data) {
+          final group = Group.fromJson(json);
+          groups.add(group);
+          groupIds.add(group.id);
+          
+          // Store group in the groups box
+          await groupBox.put(group.id, group);
+        }
+        
+        // Update the cache with the new data
+        await userGroupsCache.put(cacheKey, {
+          'groupIds': groupIds,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        });
+        
+        return groups;
+      } else {
+        // If API fails but we have cached data, return that
+        if (cachedResult != null) {
+          final groupIds = List<String>.from(cachedResult['groupIds'] ?? []);
+          final cachedGroups = groupIds
+              .map((id) => groupBox.get(id))
+              .whereType<Group>()
+              .toList();
+          if (cachedGroups.isNotEmpty) {
+            print('API Error: Returning cached groups for user $userId');
+            return cachedGroups;
+          }
+        }
+        // If no cache is available, return empty list instead of throwing
+        return [];
+      }
+    } catch (e) {
+      // For any error, try to return cached data if available
+      if (cachedResult != null) {
+        final groupIds = List<String>.from(cachedResult['groupIds'] ?? []);
+        final cachedGroups = groupIds
+            .map((id) => groupBox.get(id))
+            .whereType<Group>()
+            .toList();
+        if (cachedGroups.isNotEmpty) {
+          print('Error ($e): Returning cached groups for user $userId');
+          return cachedGroups;
+        }
+      }
+      // If no cache is available, return empty list
+      return [];
     }
   }
   
@@ -206,32 +302,50 @@ class ApiGroupMessageService {
       return cachedGroup;
     }
     
-    // If no valid cache, fetch from API
-    final response = await http.get(
-      Uri.parse('$baseUrl/groups/$groupId'),
-      headers: getAuthHeaders(),
-    );
+    // Check internet connectivity
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (!hasInternet) {
+      if (cachedGroup != null) {
+        print('Offline: Returning cached group details for group $groupId');
+        return cachedGroup;
+      }
+      throw Exception('No internet connection and no cached group available');
+    }
     
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      print('Fetched group details from API for group $groupId: $jsonData');
+    try {
+      // If we're online, fetch from API
+      final response = await http.get(
+        Uri.parse('$baseUrl/groups/$groupId'),
+        headers: getAuthHeaders(),
+      ).timeout(const Duration(seconds: 10));
       
-      final group = Group.fromJson(jsonData);
-      
-      // Update the cache
-      await groupBox.put(groupId, group);
-      await groupDetailsCache.put(cacheKey, {
-        'groupId': groupId,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-      
-      return group;
-    } else if (cachedGroup != null) {
-      // If the API call fails but we have a cached version, return that
-      print('API call failed but returning cached group details for group $groupId');
-      return cachedGroup;
-    } else {
-      throw Exception('Failed to get group details: ${response.body}');
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        print('Fetched group details from API for group $groupId: $jsonData');
+        
+        final group = Group.fromJson(jsonData);
+        
+        // Update the cache
+        await groupBox.put(groupId, group);
+        await groupDetailsCache.put(cacheKey, {
+          'groupId': groupId,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        });
+        
+        return group;
+      } else if (cachedGroup != null) {
+        // If the API call fails but we have a cached version, return that
+        print('API Error: Returning cached group details for group $groupId');
+        return cachedGroup;
+      } else {
+        throw Exception('Failed to get group details: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (cachedGroup != null) {
+        print('Error ($e): Returning cached group details for group $groupId');
+        return cachedGroup;
+      }
+      rethrow;
     }
   }
   

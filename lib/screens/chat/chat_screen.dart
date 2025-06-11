@@ -4,6 +4,7 @@ import 'package:chatapplication/services/api/directmessage.dart';
 import 'package:chatapplication/services/file/file_service.dart';
 import 'package:chatapplication/services/mqtt/mqtt_service.dart';
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../models/message.dart';
@@ -121,6 +122,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _sendMessage() async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No Internet! Connect with Internet First')),
+      );
+    }
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 

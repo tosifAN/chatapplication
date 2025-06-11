@@ -146,10 +146,17 @@ class GroupMessageBubble extends StatelessWidget {
 
     Future<void> _deleteMessage(BuildContext context) async {
      try {
-          await _apiService.deleteMessage(message.id);
-          ScaffoldMessenger.of(context).showSnackBar(
+         bool isDeleted = await _apiService.deleteMessage(message.id);
+          if(!isDeleted){
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No Internet! Connect with internet')),
+          );
+          }
+          else{
+            ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Message deleted successfully')),
           );
+          }
           } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Error deleting Message: $e')),

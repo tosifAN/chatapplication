@@ -28,8 +28,9 @@ class ApiDirectMessageService {
     final cacheKeyWithPagination = isFirstPage ? cacheKey : '${cacheKey}_${offset}_$limit';
     
     // Check if we have cached results for this chat and pagination
+    dynamic cachedResult;
     if (isFirstPage) {
-      final cachedResult = chatCacheBox.get(cacheKey);
+      cachedResult = chatCacheBox.get(cacheKey);
       if (cachedResult != null) {
         final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
         final timestamp = cachedResult['timestamp'] as int? ?? 0;
@@ -49,34 +50,80 @@ class ApiDirectMessageService {
       }
     }
     
-    // If no valid cache, fetch from API
-    final response = await http.get(
-      Uri.parse('$baseUrl/messages/direct/$userId/$otherUserId?limit=$limit&offset=$offset'),
-      headers: getAuthHeaders(),
-    );
+    // Check internet connectivity
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (!hasInternet) {
+      // If we have any cache (even if expired), return it with empty list as fallback
+      if (cachedResult != null) {
+        final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
+        final cachedMessages = messageIds
+            .map((id) => messageBox.get(id))
+            .whereType<Message>()
+            .toList();
+        if (cachedMessages.isNotEmpty) {
+          return cachedMessages;
+        }
+      }
+      // If no cache is available, return empty list instead of throwing
+      return [];
+    }
     
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      final messages = data.map((json) => Message.fromJson(json)).toList();
+    try {
+      // If we're online, fetch from API
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/direct/$userId/$otherUserId?limit=$limit&offset=$offset'),
+        headers: getAuthHeaders(),
+      ).timeout(const Duration(seconds: 10));
       
-      // Store messages and collect their IDs
-      final messageIds = <String>[];
-      for (final message in messages) {
-        await messageBox.put(message.id, message);
-        messageIds.add(message.id);
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        final messages = data.map((json) => Message.fromJson(json)).toList();
+        
+        // Store messages and collect their IDs
+        final messageIds = <String>[];
+        for (final message in messages) {
+          await messageBox.put(message.id, message);
+          messageIds.add(message.id);
+        }
+        
+        // Save the chat messages with a timestamp (30 seconds cache for first page)
+        if (isFirstPage) {
+          await chatCacheBox.put(cacheKey, {
+            'messageIds': messageIds,
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          });
+        }
+        
+        return messages;
+      } else {
+        // If API fails but we have cached data, return that
+        if (cachedResult != null) {
+          final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
+          final cachedMessages = messageIds
+              .map((id) => messageBox.get(id))
+              .whereType<Message>()
+              .toList();
+          if (cachedMessages.isNotEmpty) {
+            return cachedMessages;
+          }
+        }
+        // If no cache is available, return empty list instead of throwing
+        return [];
       }
-      
-      // Save the chat messages with a timestamp (30 seconds cache for first page)
-      if (isFirstPage) {
-        await chatCacheBox.put(cacheKey, {
-          'messageIds': messageIds,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-        });
+    } catch (e) {
+      // For any error, try to return cached data if available
+      if (cachedResult != null) {
+        final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
+        final cachedMessages = messageIds
+            .map((id) => messageBox.get(id))
+            .whereType<Message>()
+            .toList();
+        if (cachedMessages.isNotEmpty) {
+          return cachedMessages;
+        }
       }
-      
-      return messages;
-    } else {
-      throw Exception('Failed to get direct messages: ${response.body}');
+      // If no cache is available, return empty list
+      return [];
     }
   }
 

@@ -8,6 +8,7 @@ import 'models/group.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'testing.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +48,7 @@ void main() async {
     Hive.openBox<Map>('user_groups_cache'),
     Hive.openBox<Map>('group_details_cache')
   ]);
-  
+
   runApp(const MyApp());
 }
 
@@ -56,6 +57,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    return MaterialApp(
+      home: ImageUploader(),
+    );
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),

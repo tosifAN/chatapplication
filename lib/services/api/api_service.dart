@@ -20,31 +20,48 @@ class ApiService {
   // Remove the old _headers getter
 
   Future<User> getUserProfile(String userId) async {
-    // Try to get from cache first
     final userBox = await Hive.openBox<User>('users');
+    
+    // First check for cached data
     final cachedUser = userBox.get(userId);
     
-    if (cachedUser != null) {
-      // Return cached user immediately
-      print("this is your cashed user ${cachedUser.username}");
-      return cachedUser;
+    // Check internet connectivity
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (!hasInternet) {
+      if (cachedUser != null) {
+        print("No internet. Returning cached user: ${cachedUser.username}");
+        return cachedUser;
+      }
+      throw Exception('No internet connection and no cached data available');
     }
-
-    print("it is not yet cashed mr");
     
-    // If not in cache, fetch from API
-    final response = await http.get(
-      Uri.parse('$baseUrl/users/$userId'),
-      headers: getAuthHeaders(),
-    );
-    
-    if (response.statusCode == 200) {
-      final user = User.fromJson(jsonDecode(response.body));
-      // Store in Hive with userId as the key
-      await userBox.put(userId, user);
-      return user;
-    } else {
-      throw Exception('Failed to get user profile: ${response.body}');
+    try {
+      // If we're online, fetch from API
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/$userId'),
+        headers: getAuthHeaders(),
+      ).timeout(const Duration(seconds: 10));
+      
+      if (response.statusCode == 200) {
+        final user = User.fromJson(jsonDecode(response.body));
+        // Update cache with fresh data
+        await userBox.put(userId, user);
+        return user;
+      } else {
+        // If API fails but we have cached data, return that
+        if (cachedUser != null) {
+          print("API Error ${response.statusCode}, returning cached user: ${cachedUser.username}");
+          return cachedUser;
+        }
+        throw Exception('Failed to get user profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      // For any error, try to return cached data if available
+      if (cachedUser != null) {
+        print("Error occurred (${e.runtimeType}), returning cached user: ${cachedUser.username}");
+        return cachedUser;
+      }
+      rethrow;
     }
   }
   
@@ -71,34 +88,71 @@ class ApiService {
       }
     }
     
-    // If no valid cache, fetch from API
-    final response = await http.get(
-      Uri.parse('$baseUrl/users/search?q=$query'),
-      headers: getAuthHeaders(),
-    );
-    
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      final users = data.map((json) => User.fromJson(json)).toList();
-      
-      // Cache the users
-      final userIds = <String>[];
-      
-      // Store users and collect their IDs
-      for (final user in users) {
-        await userBox.put(user.id, user);
-        userIds.add(user.id);
+    // Check internet connectivity
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (!hasInternet) {
+      // If we have any cache (even if expired), return it with empty list as fallback
+      if (cachedResult != null) {
+        final userIds = List<String>.from(cachedResult['userIds'] ?? []);
+        final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
+        if (cachedUsers.isNotEmpty) {
+          return cachedUsers;
+        }
       }
+      // If no cache is available, return empty list instead of throwing
+      return [];
+    }
+    
+    try {
+      // If we're online, fetch from API
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/search?q=$query'),
+        headers: getAuthHeaders(),
+      ).timeout(const Duration(seconds: 10));
       
-      // Save the search results with a timestamp
-      await searchCacheBox.put(cacheKey, {
-        'userIds': userIds,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-      
-      return users;
-    } else {
-      throw Exception('Failed to search users: ${response.body}');
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        final users = data.map((json) => User.fromJson(json)).toList();
+        
+        // Cache the users
+        final userIds = <String>[];
+        
+        // Store users and collect their IDs
+        for (final user in users) {
+          await userBox.put(user.id, user);
+          userIds.add(user.id);
+        }
+        
+        // Save the search results with a timestamp
+        await searchCacheBox.put(cacheKey, {
+          'userIds': userIds,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        });
+        
+        return users;
+      } else {
+        // If API fails but we have cached data, return that
+        if (cachedResult != null) {
+          final userIds = List<String>.from(cachedResult['userIds'] ?? []);
+          final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
+          if (cachedUsers.isNotEmpty) {
+            return cachedUsers;
+          }
+        }
+        // If no cache is available, return empty list instead of throwing
+        return [];
+      }
+    } catch (e) {
+      // For any error, try to return cached data if available
+      if (cachedResult != null) {
+        final userIds = List<String>.from(cachedResult['userIds'] ?? []);
+        final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
+        if (cachedUsers.isNotEmpty) {
+          return cachedUsers;
+        }
+      }
+      // If no cache is available, return empty list
+      return [];
     }
   }
 
@@ -114,7 +168,7 @@ class ApiService {
       final userIds = List<String>.from(cachedResult['userIds'] ?? []);
       final timestamp = cachedResult['timestamp'] as int? ?? 0;
       
-      // If cache is less than 120 minute old, return cached results
+      // If cache is less than 120 minutes old, return cached results
       if (DateTime.now().millisecondsSinceEpoch - timestamp < 120 * 60 * 1000) {
         // Get users from cache
         final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
@@ -124,40 +178,77 @@ class ApiService {
       }
     }
     
-    // If no valid cache, fetch from API
-    final response = await http.get(
-      Uri.parse('$baseUrl/users/$userid/recent-chats'),
-      headers: getAuthHeaders(),
-    );
-    
-    if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      final users = data.map((json) => User.fromJson(json)).toList();
-      
-      // Store users and collect their IDs
-      final userIds = <String>[];
-      for (final user in users) {
-        await userBox.put(user.id, user);
-        userIds.add(user.id);
+    // Check internet connectivity
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (!hasInternet) {
+      // If we have any cache (even if expired), return it with empty list as fallback
+      if (cachedResult != null) {
+        final userIds = List<String>.from(cachedResult['userIds'] ?? []);
+        final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
+        if (cachedUsers.isNotEmpty) {
+          return cachedUsers;
+        }
       }
+      // If no cache is available, return empty list instead of throwing
+      return [];
+    }
+    
+    try {
+      // If we're online, fetch from API
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/$userid/recent-chats'),
+        headers: getAuthHeaders(),
+      ).timeout(const Duration(seconds: 10));
       
-      // Save the recent chats with a timestamp (1 minute cache)
-      await recentChatsBox.put(cacheKey, {
-        'userIds': userIds,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
-      
-      return users;
-    } else {
-      throw Exception('Failed to get recent interacted users: ${response.body}');
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        final users = data.map((json) => User.fromJson(json)).toList();
+        
+        // Store users and collect their IDs
+        final userIds = <String>[];
+        for (final user in users) {
+          await userBox.put(user.id, user);
+          userIds.add(user.id);
+        }
+        
+        // Save the recent chats with a timestamp
+        await recentChatsBox.put(cacheKey, {
+          'userIds': userIds,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        });
+        
+        return users;
+      } else {
+        // If API fails but we have cached data, return that
+        if (cachedResult != null) {
+          final userIds = List<String>.from(cachedResult['userIds'] ?? []);
+          final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
+          if (cachedUsers.isNotEmpty) {
+            return cachedUsers;
+          }
+        }
+        // If no cache is available, return empty list instead of throwing
+        return [];
+      }
+    } catch (e) {
+      // For any error, try to return cached data if available
+      if (cachedResult != null) {
+        final userIds = List<String>.from(cachedResult['userIds'] ?? []);
+        final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
+        if (cachedUsers.isNotEmpty) {
+          return cachedUsers;
+        }
+      }
+      // If no cache is available, return empty list
+      return [];
     }
   }
 
-  Future<void> deleteMessage(String messageId) async {
+  Future<bool> deleteMessage(String messageId) async {
     bool result = await InternetConnection().hasInternetAccess;
     if (!result){
        print("No Internet Connection! Please connect with internet");
-       return ;
+       return false;
     }
     final response = await http.delete(
       Uri.parse('$baseUrl/messages/$messageId'),
@@ -165,6 +256,9 @@ class ApiService {
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to delete group: ${response.body}');
+    }
+    else{
+      return true;
     }
   }
 }

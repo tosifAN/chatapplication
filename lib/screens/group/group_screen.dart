@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:chatapplication/screens/group/adduserdialogbox.dart';
 import 'package:chatapplication/screens/group/group_message_bubble.dart';
 import 'package:chatapplication/screens/group/infodialog.dart';
 import 'package:chatapplication/services/api/groupmessage.dart';
 import 'package:flutter/material.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:provider/provider.dart';
 import '../../models/group.dart';
 import '../../models/message.dart';
@@ -120,9 +122,37 @@ class _GroupScreenState extends State<GroupScreen> {
       setState(() {
         _members = members;
       });
+    } on SocketException catch (e) {
+      if (_members.isEmpty) {
+        // Only show error if we don't have any cached members
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No internet connection. Showing cached data if available.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // We have cached members, just notify user they're seeing cached data
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No internet connection. Using cached data.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } on TimeoutException {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Connection timed out. Using cached data if available.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading group members: $e')),
+        SnackBar(
+          content: Text('Error loading group members: ${e.toString().replaceAll('Exception: ', '')}'),
+          duration: const Duration(seconds: 4),
+        ),
       );
     }
   }
@@ -140,6 +170,12 @@ class _GroupScreenState extends State<GroupScreen> {
   }
 
   Future<void> _sendMessage() async {
+    bool result = await InternetConnection().hasInternetAccess;
+    if (!result){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No Internet! Connect with Internet First')),
+      );
+    }
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
