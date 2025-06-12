@@ -12,91 +12,121 @@ class MessageBubble extends StatelessWidget {
   final Message message;
   final bool isMe;
 
-  MessageBubble({
-    super.key,
-    required this.message,
-    required this.isMe,
-  });
+  MessageBubble({super.key, required this.message, required this.isMe});
 
   final ApiService _apiService = ApiService();
   final MediaCacheService _mediaCacheService = MediaCacheService();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!isMe) const SizedBox(width: 8),
-          GestureDetector(
-            onLongPress: () => _showMessageOptions(context),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              child: Container(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.7,
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
-                decoration: BoxDecoration(
-                  gradient: isMe
-                      ? const LinearGradient(
-                          colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFFE0E0E0), Color(0xFFF5F5F5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.07),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double width = constraints.maxWidth;
+        double bubblePadding = width * 0.04;
+        double bubbleRadius = width * 0.06;
+        double fontSize = width * 0.037;
+        return Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: bubblePadding / 2,
+            horizontal: bubblePadding,
+          ),
+          child: Row(
+            mainAxisAlignment:
+                isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            children: [
+              if (!isMe) const SizedBox(width: 8),
+              GestureDetector(
+                onLongPress: () => _showMessageOptions(context),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.7,
                     ),
-                  ],
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
-                    bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
-                    bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildMessageContent(context),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _formatTimestamp(message.timestamp),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isMe ? Colors.white70 : Colors.grey[600],
-                          ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18.0,
+                      vertical: 12.0,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient:
+                          isMe
+                              ? const LinearGradient(
+                                colors: [
+                                  Color(0xFF833ab4),
+                                  Color(0xFFfd1d1d),
+                                  Color(0xFFfcb045),
+                                ], // Instagram gradient
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                              : const LinearGradient(
+                                colors: [
+                                  Color.fromARGB(255, 107, 113, 116),
+                                  Color(0xFF414345),
+                                ], // Subtle dark gradient for received
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.07),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
-                        if (isMe && message.isRead)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 4.0),
-                            child: Icon(Icons.check, size: 14, color: Colors.white70),
-                          ),
+                      ],
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(22),
+                        topRight: const Radius.circular(22),
+                        bottomLeft:
+                            isMe
+                                ? const Radius.circular(22)
+                                : const Radius.circular(8),
+                        bottomRight:
+                            isMe
+                                ? const Radius.circular(8)
+                                : const Radius.circular(22),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildMessageContent(context),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _formatTimestamp(message.timestamp),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isMe ? Colors.white : Colors.pinkAccent,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (isMe && message.isRead)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4.0),
+                                child: Icon(
+                                  Icons.check,
+                                  size: 14,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
-  
+
   void _showMessageOptions(BuildContext context) async {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
     final position = renderBox.localToGlobal(Offset.zero);
@@ -113,8 +143,7 @@ class MessageBubble extends StatelessWidget {
       items: [
         const PopupMenuItem(value: 'copy', child: Text('Copy')),
         const PopupMenuItem(value: 'forward', child: Text('Forward')),
-        if (isMe)
-          const PopupMenuItem(value: 'delete', child: Text('Delete')),
+        if (isMe) const PopupMenuItem(value: 'delete', child: Text('Delete')),
       ],
     );
 
@@ -128,23 +157,22 @@ class MessageBubble extends StatelessWidget {
   }
 
   Future<void> _deleteMessage(BuildContext context) async {
-     try {
-          bool isDeleted = await _apiService.deleteMessage(message.id);
-          if(!isDeleted){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No Internet! Connect with internet')),
-          );
-          }
-          else{
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Message deleted successfully')),
-          );
-          }
-          } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error deleting Message: $e')),
-              );
+    try {
+      bool isDeleted = await _apiService.deleteMessage(message.id);
+      if (!isDeleted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No Internet! Connect with internet')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Message deleted successfully')),
+        );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error deleting Message: $e')));
+    }
   }
 
   void _copyMessage(BuildContext context) {
@@ -158,9 +186,7 @@ class MessageBubble extends StatelessWidget {
   void _forwardMessage(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => ForwardMessageScreen(message: message),
-      ),
+      MaterialPageRoute(builder: (_) => ForwardMessageScreen(message: message)),
     );
   }
 
@@ -175,11 +201,12 @@ class MessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => EnhancedImageView(
-                      imageUrl: message.content,
-                      messageId: message.id,
-                      onDelete: isMe ? () => _deleteMessage(context) : null,
-                    ),
+                    builder:
+                        (_) => EnhancedImageView(
+                          imageUrl: message.content,
+                          messageId: message.id,
+                          onDelete: isMe ? () => _deleteMessage(context) : null,
+                        ),
                   ),
                 );
               },
@@ -194,7 +221,8 @@ class MessageBubble extends StatelessWidget {
                       width: 200,
                       height: 150,
                       child: const Center(
-                        child: CircularProgressIndicator(), // Indeterminate progress
+                        child:
+                            CircularProgressIndicator(), // Indeterminate progress
                       ),
                     );
                   },
@@ -203,9 +231,7 @@ class MessageBubble extends StatelessWidget {
                       width: 200,
                       height: 150,
                       color: Colors.grey[300],
-                      child: const Center(
-                        child: Icon(Icons.error),
-                      ),
+                      child: const Center(child: Icon(Icons.error)),
                     );
                   },
                 ),
@@ -222,11 +248,12 @@ class MessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => EnhancedVideoView(
-                      videoUrl: message.content,
-                      messageId: message.id,
-                      onDelete: isMe ? () => _deleteMessage(context) : null,
-                    ),
+                    builder:
+                        (_) => EnhancedVideoView(
+                          videoUrl: message.content,
+                          messageId: message.id,
+                          onDelete: isMe ? () => _deleteMessage(context) : null,
+                        ),
                   ),
                 );
               },
@@ -299,9 +326,7 @@ class MessageBubble extends StatelessWidget {
       default:
         return Text(
           message.content,
-          style: TextStyle(
-            color: isMe ? Colors.white : Colors.black87,
-          ),
+          style: TextStyle(color: isMe ? Colors.white : Colors.black87),
         );
     }
   }

@@ -35,8 +35,8 @@ class ApiDirectMessageService {
         final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
         final timestamp = cachedResult['timestamp'] as int? ?? 0;
         
-        // If cache is less than 120 minutes old, return cached results
-        if (DateTime.now().millisecondsSinceEpoch - timestamp < 120 * 60 * 1000) {
+        // If cache is less than 10 seconds old, return cached results
+        if (DateTime.now().millisecondsSinceEpoch - timestamp < 10 * 1000) {
           // Get messages from cache
           final cachedMessages = messageIds
               .map((id) => messageBox.get(id))

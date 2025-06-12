@@ -14,7 +14,8 @@ class GroupMessageBubble extends StatelessWidget {
   final bool isMe;
   final User sender;
 
-  GroupMessageBubble({super.key, 
+  GroupMessageBubble({
+    super.key,
     required this.message,
     required this.isMe,
     required this.sender,
@@ -25,113 +26,173 @@ class GroupMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isMe) ...[
-            CircleAvatar(
-              radius: 18,
-              backgroundImage: sender.avatarUrl != null
-                  ? NetworkImage(sender.avatarUrl!)
-                  : null,
-              child: sender.avatarUrl == null
-                  ? Text(sender.username[0].toUpperCase(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))
-                  : null,
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: GestureDetector(
-              onLongPress: () => _showMessageOptions(context),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                child: Column(
-                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                  children: [
-                    if (!isMe)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
-                        child: Text(
-                          sender.username,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
-                      decoration: BoxDecoration(
-                        gradient: isMe
-                            ? const LinearGradient(
-                                colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : const LinearGradient(
-                                colors: [Color(0xFFE0E0E0), Color(0xFFF5F5F5)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double width = constraints.maxWidth;
+        double bubblePadding = width * 0.04;
+        double bubbleRadius = width * 0.06;
+        double fontSize = width * 0.037;
+        return Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: bubblePadding / 2,
+            horizontal: bubblePadding,
+          ),
+          child: Row(
+            mainAxisAlignment:
+                isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!isMe) ...[
+                CircleAvatar(
+                  radius: 18,
+                  backgroundImage:
+                      sender.avatarUrl != null
+                          ? NetworkImage(sender.avatarUrl!)
+                          : null,
+                  child:
+                      sender.avatarUrl == null
+                          ? Text(
+                            sender.username[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                          : null,
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: GestureDetector(
+                  onLongPress: () => _showMessageOptions(context),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: Column(
+                      crossAxisAlignment:
+                          isMe
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                      children: [
+                        if (!isMe)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4.0),
+                            child: Text(
+                              sender.username,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
                               ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.07),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                            ),
                           ),
-                        ],
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(20),
-                          topRight: const Radius.circular(20),
-                          bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
-                          bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildMessageContent(context),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18.0,
+                            vertical: 12.0,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient:
+                                isMe
+                                    ? const LinearGradient(
+                                      colors: [
+                                        Color(0xFF833ab4),
+                                        Color(0xFFfd1d1d),
+                                        Color(0xFFfcb045),
+                                      ], // Instagram gradient
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                    : const LinearGradient(
+                                      colors: [
+                                        Color(0xFF232526),
+                                        Color(0xFF414345),
+                                      ], // Subtle dark gradient for received
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.07),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(22),
+                              topRight: const Radius.circular(22),
+                              bottomLeft:
+                                  isMe
+                                      ? const Radius.circular(22)
+                                      : const Radius.circular(8),
+                              bottomRight:
+                                  isMe
+                                      ? const Radius.circular(8)
+                                      : const Radius.circular(22),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                _formatTime(message.timestamp),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isMe ? Colors.white70 : Colors.grey[600],
-                                ),
+                              _buildMessageContent(context),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _formatTime(message.timestamp),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color:
+                                          isMe
+                                              ? Colors.white70
+                                              : Colors.grey[600],
+                                    ),
+                                  ),
+                                  // Optionally, add a read/delivered icon for group messages if you want
+                                ],
                               ),
-                              // Optionally, add a read/delivered icon for group messages if you want
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
-  
+
   void _showMessageOptions(BuildContext context) async {
     final selected = await showMenu<String>(
       context: context,
-      position: RelativeRect.fromLTRB(100, 100, 100, 100), // You may want to improve this position logic
+      position: RelativeRect.fromLTRB(
+        100,
+        100,
+        100,
+        100,
+      ), // You may want to improve this position logic
       items: [
-        const PopupMenuItem(value: 'copy', child: ListTile(leading: Icon(Icons.copy), title: Text('Copy'))),
-        const PopupMenuItem(value: 'forward', child: ListTile(leading: Icon(Icons.forward), title: Text('Forward'))),
+        const PopupMenuItem(
+          value: 'copy',
+          child: ListTile(leading: Icon(Icons.copy), title: Text('Copy')),
+        ),
+        const PopupMenuItem(
+          value: 'forward',
+          child: ListTile(leading: Icon(Icons.forward), title: Text('Forward')),
+        ),
         if (isMe)
-          const PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text('Delete', style: TextStyle(color: Colors.red))))
+          const PopupMenuItem(
+            value: 'delete',
+            child: ListTile(
+              leading: Icon(Icons.delete, color: Colors.red),
+              title: Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ),
       ],
     );
 
@@ -144,26 +205,24 @@ class GroupMessageBubble extends StatelessWidget {
     }
   }
 
-    Future<void> _deleteMessage(BuildContext context) async {
-     try {
-         bool isDeleted = await _apiService.deleteMessage(message.id);
-          if(!isDeleted){
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No Internet! Connect with internet')),
-          );
-          }
-          else{
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Message deleted successfully')),
-          );
-          }
-          } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error deleting Message: $e')),
-              );
+  Future<void> _deleteMessage(BuildContext context) async {
+    try {
+      bool isDeleted = await _apiService.deleteMessage(message.id);
+      if (!isDeleted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No Internet! Connect with internet')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Message deleted successfully')),
+        );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error deleting Message: $e')));
+    }
   }
-
 
   void _copyMessage(BuildContext context) {
     // Copy message content to clipboard
@@ -176,9 +235,7 @@ class GroupMessageBubble extends StatelessWidget {
   void _forwardMessage(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => ForwardMessageScreen(message: message),
-      ),
+      MaterialPageRoute(builder: (_) => ForwardMessageScreen(message: message)),
     );
   }
 
@@ -193,12 +250,13 @@ class GroupMessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => EnhancedImageView(
-                      imageUrl: message.content,
-                      messageId: message.id,
-                      isGroupMessage: true,
-                      onDelete: isMe ? () => _deleteMessage(context) : null,
-                    ),
+                    builder:
+                        (_) => EnhancedImageView(
+                          imageUrl: message.content,
+                          messageId: message.id,
+                          isGroupMessage: true,
+                          onDelete: isMe ? () => _deleteMessage(context) : null,
+                        ),
                   ),
                 );
               },
@@ -212,9 +270,7 @@ class GroupMessageBubble extends StatelessWidget {
                     return Container(
                       width: 200,
                       height: 150,
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: const Center(child: CircularProgressIndicator()),
                     );
                   },
                   errorWidget: (context, url, error) {
@@ -222,9 +278,7 @@ class GroupMessageBubble extends StatelessWidget {
                       width: 200,
                       height: 150,
                       color: Colors.grey[300],
-                      child: const Center(
-                        child: Icon(Icons.error),
-                      ),
+                      child: const Center(child: Icon(Icons.error)),
                     );
                   },
                 ),
@@ -241,12 +295,13 @@ class GroupMessageBubble extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => EnhancedVideoView(
-                      videoUrl: message.content,
-                      messageId: message.id,
-                      isGroupMessage: true,
-                      onDelete: isMe ? () => _deleteMessage(context) : null,
-                    ),
+                    builder:
+                        (_) => EnhancedVideoView(
+                          videoUrl: message.content,
+                          messageId: message.id,
+                          isGroupMessage: true,
+                          onDelete: isMe ? () => _deleteMessage(context) : null,
+                        ),
                   ),
                 );
               },
@@ -321,12 +376,11 @@ class GroupMessageBubble extends StatelessWidget {
       default:
         return Text(
           message.content,
-          style: TextStyle(
-            color: isMe ? Colors.white : Colors.black87,
-          ),
+          style: TextStyle(color: isMe ? Colors.white : Colors.black87),
         );
     }
   }
+
   String _formatTime(DateTime timestamp) {
     final time = TimeOfDay.fromDateTime(timestamp);
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;

@@ -67,170 +67,209 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isCurrentUser ? 'My Profile' : 'User Profile'),
-        actions: widget.isCurrentUser
-            ? [
-                IconButton(
-                  icon: Icon(_isEditing ? Icons.close : Icons.edit),
-                  onPressed: _toggleEdit,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double width = constraints.maxWidth;
+        double cardPadding = width * 0.03;
+        double fontSizeTitle = width * 0.045;
+        double fontSizeSubtitle = width * 0.035;
+        double iconSize = width * 0.06;
+        double avatarRadius = width * 0.12;
+        return Scaffold(
+          appBar: AppBar(
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF833ab4),
+                    Color(0xFFfd1d1d),
+                    Color(0xFFfcb045),
+                  ], // Instagram gradient
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                if (_isEditing)
-                  IconButton(
-                    icon: const Icon(Icons.check),
-                    onPressed: _saveProfile,
-                  ),
-              ]
-            : null,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 16),
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundImage: widget.user.avatarUrl != null
-                        ? NetworkImage(widget.user.avatarUrl!)
-                        : null,
-                    child: widget.user.avatarUrl == null
-                        ? Text(
-                            widget.user.username[0].toUpperCase(),
-                            style: const TextStyle(fontSize: 40),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  if (widget.isCurrentUser && _isEditing) ...[  
-                    TextFormField(
-                      controller: _usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ] else ...[  
-                    Text(
-                      widget.user.username,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.user.email,
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Status',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: widget.user.isOnline
-                                      ? Colors.green
-                                      : Colors.grey,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                widget.user.isOnline ? 'Online' : 'Offline',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Last Seen',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            formatTime(widget.user.lastSeen),
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (widget.isCurrentUser) ...[  
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Show account settings
-                      },
-                      icon: const Icon(Icons.settings),
-                      label: const Text('Account Settings'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        final authProvider =
-                            Provider.of<AuthProvider>(context, listen: false);
-                        authProvider.logout();
-                        Navigator.of(context).pop();
-                      },
-                      icon: const Icon(Icons.logout, color: Colors.red),
-                      label: const Text('Logout',
-                          style: TextStyle(color: Colors.red)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ] else ...[  
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Navigate to chat screen with this user
-                        Navigator.pop(context); // Go back to previous screen
-                      },
-                      icon: const Icon(Icons.chat),
-                      label: const Text('Send Message'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
               ),
             ),
+            title: Text(widget.isCurrentUser ? 'My Profile' : 'User Profile'),
+            actions:
+                widget.isCurrentUser
+                    ? [
+                      IconButton(
+                        icon: Icon(_isEditing ? Icons.close : Icons.edit),
+                        onPressed: _toggleEdit,
+                      ),
+                      if (_isEditing)
+                        IconButton(
+                          icon: const Icon(Icons.check),
+                          onPressed: _saveProfile,
+                        ),
+                    ]
+                    : null,
+          ),
+          body:
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 16),
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundImage:
+                              widget.user.avatarUrl != null
+                                  ? NetworkImage(widget.user.avatarUrl!)
+                                  : null,
+                          child:
+                              widget.user.avatarUrl == null
+                                  ? Text(
+                                    widget.user.username[0].toUpperCase(),
+                                    style: const TextStyle(fontSize: 40),
+                                  )
+                                  : null,
+                        ),
+                        const SizedBox(height: 16),
+                        if (widget.isCurrentUser && _isEditing) ...[
+                          TextFormField(
+                            controller: _usernameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Username',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ] else ...[
+                          Text(
+                            widget.user.username,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.user.email,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Status',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            widget.user.isOnline
+                                                ? Colors.green
+                                                : Colors.grey,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      widget.user.isOnline
+                                          ? 'Online'
+                                          : 'Offline',
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Last Seen',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  formatTime(widget.user.lastSeen),
+                                  style: const TextStyle(fontSize: 16),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (widget.isCurrentUser) ...[
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              // Show account settings
+                            },
+                            icon: const Icon(Icons.settings),
+                            label: const Text('Account Settings'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              final authProvider = Provider.of<AuthProvider>(
+                                context,
+                                listen: false,
+                              );
+                              authProvider.logout();
+                              Navigator.of(context).pop();
+                            },
+                            icon: const Icon(Icons.logout, color: Colors.red),
+                            label: const Text(
+                              'Logout',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              // Navigate to chat screen with this user
+                              Navigator.pop(
+                                context,
+                              ); // Go back to previous screen
+                            },
+                            icon: const Icon(Icons.chat),
+                            label: const Text('Send Message'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+        );
+      },
     );
   }
 }

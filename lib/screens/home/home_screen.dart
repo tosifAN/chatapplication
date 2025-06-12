@@ -51,6 +51,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double width = constraints.maxWidth;
+        double cardPadding = width * 0.03;
+        double fontSizeTitle = width * 0.045;
+        double fontSizeSubtitle = width * 0.035;
+        double iconSize = width * 0.06;
+        double avatarRadius = width * 0.07;
+
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.currentUser;
 
@@ -68,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              colors: [Color(0xFF833ab4), Color(0xFFfd1d1d), Color(0xFFfcb045)], // Instagram gradient
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -118,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           controller: _tabController,
           indicator: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(12)),
-            color: Color(0x332196F3),
+            color: Color(0x44fd1d1d), // Instagram red with opacity
           ),
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           tabs: const [
@@ -140,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.blueAccent.withOpacity(0.3),
+              color: Color(0xFFfd1d1d).withOpacity(0.3), // Instagram red shadow
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -158,10 +167,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               _showCreateGroupDialog(context, user.id);
             }
           },
-          backgroundColor: Colors.blueAccent,
+          backgroundColor: const Color(0xFF833ab4), // Instagram purple
           child: Icon(_currentIndex == 0 ? Icons.chat : Icons.group_add, color: Colors.white),
         ),
       ),
+    );
+      }
     );
   }
 
@@ -174,6 +185,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -182,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+                  colors: [Color(0xFF833ab4), Color(0xFFfd1d1d), Color(0xFFfcb045)], // Instagram gradient
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -244,6 +256,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
       ),
+      )
     );
   }
 }
