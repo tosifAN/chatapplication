@@ -173,7 +173,7 @@ class _ForwardMessageScreenState extends State<ForwardMessageScreen> {
           if (_isForwarding)
             Positioned.fill(
               child: Container(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black..withValues(), //withOpacity(0.2),
                 child: const Center(child: CircularProgressIndicator()),
               ),
             ),
@@ -205,7 +205,7 @@ class _ForwardMessageScreenState extends State<ForwardMessageScreen> {
                                   border: Border.all(color: Colors.white, width: 2),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
+                                      color: Colors.black..withValues(), //withOpacity(0.08),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),

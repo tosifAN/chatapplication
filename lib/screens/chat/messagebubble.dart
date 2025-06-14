@@ -70,7 +70,7 @@ class MessageBubble extends StatelessWidget {
                               ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.07),
+                          color: Colors.black..withValues(),//withOpacity(0.07),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -280,8 +280,8 @@ class MessageBubble extends StatelessWidget {
               onTap: () async {
                 // Open PDF in external viewer
                 final url = message.content;
-                if (await canLaunch(url)) {
-                  await launch(url);
+                if (await canLaunchUrl(url as Uri)){   //if (await canLaunch(url)) {
+                 await launchUrl(url as Uri);      //await launch(url);
                 }
               },
               child: Text(
@@ -309,8 +309,8 @@ class MessageBubble extends StatelessWidget {
               onTap: () async {
                 // Open file URL
                 final url = message.content;
-                if (await canLaunch(url)) {
-                  await launch(url);
+                if (await canLaunchUrl(url as Uri)){   //if (await canLaunch(url)) {
+                  await launchUrl(url as Uri);      //await launch(url);
                 }
               },
               child: Text(

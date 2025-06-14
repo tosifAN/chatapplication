@@ -78,8 +78,8 @@ class ApiService {
       final userIds = List<String>.from(cachedResult['userIds'] ?? []);
       final timestamp = cachedResult['timestamp'] as int? ?? 0;
       
-      // If cache is less than 120 minutes old, return cached results
-      if (DateTime.now().millisecondsSinceEpoch - timestamp < 120 * 60 * 1000) {
+      // If cache is less than 2 minutes old, return cached results
+      if (DateTime.now().millisecondsSinceEpoch - timestamp < 2 * 60 * 1000) {
         // Get users from cache
         final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
         if (cachedUsers.isNotEmpty) {
@@ -168,8 +168,8 @@ class ApiService {
       final userIds = List<String>.from(cachedResult['userIds'] ?? []);
       final timestamp = cachedResult['timestamp'] as int? ?? 0;
       
-      // If cache is less than 120 minutes old, return cached results
-      if (DateTime.now().millisecondsSinceEpoch - timestamp < 120 * 60 * 1000) {
+      // If cache is less than 15 seconds old, return cached results
+      if (DateTime.now().millisecondsSinceEpoch - timestamp < 1 * 15 * 1000) {
         // Get users from cache
         final cachedUsers = userIds.map((id) => userBox.get(id)).whereType<User>().toList();
         if (cachedUsers.isNotEmpty) {

@@ -53,7 +53,7 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
       _localPath = file.path;
     } catch (e) {
       // Fallback to network if cache fails
-      _videoPlayerController = VideoPlayerController.network(widget.videoUrl);
+      _videoPlayerController = VideoPlayerController.networkUrl(widget.videoUrl as Uri);
       await _videoPlayerController.initialize();
     }
     
@@ -161,7 +161,7 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
     try {
       // If already downloaded, share the local file
       if (_isDownloaded && _localPath != null) {
-        await Share.shareXFiles([XFile(_localPath!)], text: 'Shared from Chat App');
+        await SharePlus.instance.share([XFile(_localPath!)] as ShareParams);
         return;
       }
 
@@ -179,7 +179,7 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
       });
 
       // Share the file
-      await Share.shareXFiles([XFile(file.path)], text: 'Shared from Chat App');
+      await SharePlus.instance.share([XFile(file.path)] as ShareParams);
     } catch (e) {
       setState(() {
         _isDownloading = false;

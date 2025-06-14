@@ -39,8 +39,8 @@ class ApiGroupMessageService {
         final messageIds = List<String>.from(cachedResult['messageIds'] ?? []);
         final timestamp = cachedResult['timestamp'] as int? ?? 0;
         
-        // If cache is less than 120 minutes old, return cached results
-        if (DateTime.now().millisecondsSinceEpoch - timestamp < 120 * 60 * 1000) {
+        // If cache is less than 10 seconds old, return cached results
+        if (DateTime.now().millisecondsSinceEpoch - timestamp < 1 * 10 * 1000) {
           // Get messages from cache
           final cachedMessages = messageIds
               .map((id) => messageBox.get(id))
@@ -186,8 +186,8 @@ class ApiGroupMessageService {
       final groupIds = List<String>.from(cachedResult['groupIds'] ?? []);
       final timestamp = cachedResult['timestamp'] as int? ?? 0;
       
-      // If cache is less than 120 minutes old, return cached results
-      if (DateTime.now().millisecondsSinceEpoch - timestamp < 120 * 60 * 1000) {
+      // If cache is less than 15 second old, return cached results
+      if (DateTime.now().millisecondsSinceEpoch - timestamp < 1 * 15 * 1000) {
         // Get groups from cache
         final cachedGroups = groupIds
             .map((id) => groupBox.get(id))

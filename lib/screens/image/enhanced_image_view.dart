@@ -138,7 +138,7 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
     try {
       // If already downloaded, share the local file
       if (_isDownloaded && _localPath != null) {
-        await Share.shareXFiles([XFile(_localPath!)], text: 'Shared from Chat App');
+        await SharePlus.instance.share([XFile(_localPath!)] as ShareParams);
         return;
       }
 
@@ -156,7 +156,7 @@ class _EnhancedImageViewState extends State<EnhancedImageView> {
       });
 
       // Share the file
-      await Share.shareXFiles([XFile(file.path)], text: 'Shared from Chat App');
+      await SharePlus.instance.share([XFile(file.path)] as ShareParams);
     } catch (e) {
       setState(() {
         _isDownloading = false;

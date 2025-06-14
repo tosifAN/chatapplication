@@ -33,7 +33,7 @@ Widget mainUI(
                   Color(0xFF833ab4),
                   Color(0xFFfd1d1d),
                   Color(0xFFfcb045),
-                ], // Instagram gradient
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -155,7 +155,7 @@ Widget mainUI(
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.07),
+                    color: Colors.black..withValues(),   //withOpacity(0.07),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),

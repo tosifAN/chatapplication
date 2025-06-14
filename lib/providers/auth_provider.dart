@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api/api_service.dart';
 import '../services/mqtt/mqtt_service.dart';
 import '../models/user.dart';
-
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   final ApiAuthService _apiAuthService = ApiAuthService();
