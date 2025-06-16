@@ -278,11 +278,11 @@ class MessageBubble extends StatelessWidget {
             const SizedBox(height: 4),
             GestureDetector(
               onTap: () async {
-                // Open PDF in external viewer
-                final url = message.content;
-                if (await canLaunchUrl(url as Uri)){   //if (await canLaunch(url)) {
-                 await launchUrl(url as Uri);      //await launch(url);
-                }
+              final urlString = message.content;
+              final uri = Uri.parse(urlString);
+              if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri);
+              }
               },
               child: Text(
                 'Open PDF',
@@ -308,9 +308,10 @@ class MessageBubble extends StatelessWidget {
             GestureDetector(
               onTap: () async {
                 // Open file URL
-                final url = message.content;
-                if (await canLaunchUrl(url as Uri)){   //if (await canLaunch(url)) {
-                  await launchUrl(url as Uri);      //await launch(url);
+                final urlString = message.content;
+                final uri = Uri.parse(urlString);
+                if (await canLaunchUrl(uri)) {
+                   await launchUrl(uri);
                 }
               },
               child: Text(

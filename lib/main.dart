@@ -1,3 +1,4 @@
+import 'package:chatapplication/services/api/hive.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,6 +9,7 @@ import 'models/group.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +49,9 @@ void main() async {
     Hive.openBox<Map>('user_groups_cache'),
     Hive.openBox<Map>('group_details_cache')
   ]);
+
+  // Clear old data from Hive boxes
+  await HiveService.clearOldData();
 
   runApp(const MyApp());
 }

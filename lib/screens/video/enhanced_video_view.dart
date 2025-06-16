@@ -53,7 +53,7 @@ class _EnhancedVideoViewState extends State<EnhancedVideoView> {
       _localPath = file.path;
     } catch (e) {
       // Fallback to network if cache fails
-      _videoPlayerController = VideoPlayerController.networkUrl(widget.videoUrl as Uri);
+      _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl));
       await _videoPlayerController.initialize();
     }
     
