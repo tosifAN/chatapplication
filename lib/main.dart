@@ -1,5 +1,6 @@
 import 'package:chatapplication/services/api/hive.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_ui/hive_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -9,6 +10,7 @@ import 'models/group.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'boxes.dart';
 
 
 void main() async {
@@ -140,6 +142,26 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Hive Inspector')),
+      body: Center(
+        child: ElevatedButton(
+          child: Text('Inspect Hive Boxes'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    HiveBoxesView(
+                      hiveBoxes: Boxes.allBoxes, // includes all open boxes
+                      onError: (err) => print('Hive UI error: $err'),
+                    ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
     final authProvider = Provider.of<AuthProvider>(context);
 
     if (authProvider.isLoading) {
@@ -150,8 +172,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                Theme.of(context).colorScheme.secondary.withOpacity(0.1),
+                Theme
+                    .of(context)
+                    .colorScheme
+                    .primary
+                    .withOpacity(0.1),
+                Theme
+                    .of(context)
+                    .colorScheme
+                    .secondary
+                    .withOpacity(0.1),
               ],
             ),
           ),
